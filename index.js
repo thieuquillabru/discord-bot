@@ -1,6 +1,7 @@
 const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const config = require('./config');
 
 // ── Création du client ──────────────────────────────────────────────
@@ -48,6 +49,14 @@ for (const file of eventFiles) {
   }
   console.log(`✅ Événement chargé : ${event.name}`);
 }
+
+// ── Serveur HTTP keep-alive (pour Render / hébergeurs) ────────────
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ status: 'online', bot: client.user?.tag || 'connecting...' }));
+});
+server.listen(PORT, () => console.log(`🌐 Keep-alive HTTP sur le port ${PORT}`));
 
 // ── Connexion ────────────────────────────────────────────────────────
 client.login(config.token).catch(err => {
