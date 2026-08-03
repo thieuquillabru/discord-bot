@@ -13,9 +13,9 @@ module.exports = {
     });
 
     // Grouper par catégorie
-    const moderation = ['kick', 'ban', 'mute', 'unmute', 'clear', 'warn'].filter(c => client.commands.has(c));
-    const fun = ['8ball', 'meme', 'rps', 'ping', 'dice'].filter(c => client.commands.has(c));
-    const util = ['help', 'ticket', 'setup'].filter(c => client.commands.has(c));
+    const moderation = ['kick', 'ban', 'mute', 'unmute', 'clear', 'warn', 'lock', 'unlock', 'slowmode'].filter(c => client.commands.has(c));
+    const fun = ['8ball', 'meme', 'rps', 'ping', 'dice', 'poll'].filter(c => client.commands.has(c));
+    const util = ['help', 'ticket', 'setup', 'userinfo', 'serverinfo', 'avatar', 'snipe', 'remind'].filter(c => client.commands.has(c));
 
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
