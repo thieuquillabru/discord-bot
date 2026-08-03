@@ -8,5 +8,6 @@ module.exports = {
 
     // Statut du bot
     client.user.setActivity('!help pour commencer', { type: 'PLAYING' });
+    console.log('Redeploy v2 - token updated');
   },
 };
