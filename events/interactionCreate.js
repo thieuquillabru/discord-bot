@@ -7,6 +7,7 @@ const {
   ButtonStyle,
 } = require('discord.js');
 const config = require('../config');
+const { isFeatureEnabled, getFeatureForCommand, FEATURE_DEFINITIONS } = require('../features');
 
 module.exports = {
   name: 'interactionCreate',
@@ -16,6 +17,17 @@ module.exports = {
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
       if (!command) return;
+
+      // Vérifier si la feature est activée
+      const featureKey = getFeatureForCommand(interaction.commandName);
+      if (featureKey && !isFeatureEnabled(featureKey)) {
+        const def = FEATURE_DEFINITIONS[featureKey];
+        return interaction.reply({
+          content: `❌ La fonctionnalité **${def.label}** est actuellement **désactivée**.`,
+          ephemeral: true,
+        });
+      }
+
       const args = [];
       // Convert interaction to message-like object
       const fakeMessage = {
@@ -71,6 +83,14 @@ module.exports = {
     if (!interaction.isButton()) return;
 
     const { customId, user, guild } = interaction;
+
+    // Vérifier features pour les boutons
+    if (customId === 'create_ticket' && !isFeatureEnabled('tickets')) {
+      return interaction.reply({ content: '❌ Le système de tickets est **désactivé**.', ephemeral: true });
+    }
+    if (customId.startsWith('rps_') && !isFeatureEnabled('fun')) {
+      return interaction.reply({ content: '❌ Les commandes fun sont **désactivées**.', ephemeral: true });
+    }
 
     // ── Bouton : Créer un ticket ────────────────────────────────────
     if (customId === 'create_ticket') {

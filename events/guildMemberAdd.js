@@ -1,11 +1,12 @@
 const config = require('../config');
 const { EmbedBuilder } = require('discord.js');
+const { isFeatureEnabled } = require('../features');
 
 module.exports = {
   name: 'guildMemberAdd',
   once: false,
   async execute(member, client) {
-    // Vérifier si le canal de bienvenue est configuré
+    if (!isFeatureEnabled('welcome')) return;
     if (!config.welcome.channelId) return;
 
     const channel = member.guild.channels.cache.get(config.welcome.channelId);

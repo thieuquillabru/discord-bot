@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GAMER MG BOT — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-card: #1e2230;
+      --bg-hover: #252a3a;
+      --border: #2a2f42;
+      --text-primary: #e8eaf0;
+      --text-secondary: #8b90a5;
+      --text-muted: #5c6178;
+      --accent: #5865F2;
+      --accent-hover: #4752c4;
+      --green: #2ECC71;
+      --red: #E74C3C;
+      --orange: #F39C12;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    .login-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--bg-primary);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.4s, visibility 0.4s;
+    }
+    .login-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .login-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%; max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .login-box h2 { font-size: 22px; font-weight: 700; margin: 16px 0 4px; }
+    .login-box p { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+    .login-box input {
+      width: 100%; padding: 14px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 15px; font-family: inherit;
+      outline: none; transition: border 0.2s;
+      margin-bottom: 16px;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box .error-msg { color: var(--red); font-size: 13px; margin-bottom: 12px; min-height: 20px; }
+    .login-box button {
+      width: 100%; padding: 14px;
+      background: var(--accent); border: none; border-radius: var(--radius-sm);
+      color: #fff; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-box button:hover { background: var(--accent-hover); }
+    .dashboard { display: none; }
+    .dashboard.active { display: block; }
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo {
+      width: 36px; height: 36px;
+      background: var(--accent); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 20px;
+      font-size: 13px; font-weight: 500;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--red); flex-shrink: 0; transition: background 0.3s;
+    }
+    .status-dot.online { background: var(--green); box-shadow: 0 0 8px rgba(46,204,113,0.5); }
+    .btn-logout {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-secondary); padding: 6px 12px; border-radius: var(--radius-sm);
+      cursor: pointer; font-family: inherit; font-size: 13px;
+      display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+    .content { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    .server-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 32px; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .server-icon {
+      width: 72px; height: 72px; border-radius: 16px;
+      background: var(--bg-primary);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .server-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .server-icon .material-icons-round { font-size: 32px; color: var(--accent); }
+    .server-info { flex: 1; min-width: 200px; }
+    .server-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .server-meta { color: var(--text-secondary); font-size: 13px; display: flex; gap: 16px; flex-wrap: wrap; }
+    .server-meta span { display: flex; align-items: center; gap: 4px; }
+    .server-meta .material-icons-round { font-size: 16px; }
+    .bot-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 32px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;
+    }
+    .bot-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 2px; }
+    .bot-stat-value { font-size: 22px; font-weight: 700; }
+    .bot-stat-value.accent { color: var(--accent); }
+    .section-title {
+      font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-secondary); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title .material-icons-round { font-size: 20px; color: var(--accent); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px; margin-bottom: 32px;
+    }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .feature-card.disabled { opacity: 0.55; }
+    .feature-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .feature-header-left { display: flex; align-items: center; gap: 12px; }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .feature-icon .material-icons-round { font-size: 22px; color: #fff; }
+    .feature-name { font-size: 16px; font-weight: 700; }
+    .feature-desc { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+    .feature-commands { display: flex; flex-wrap: wrap; gap: 6px; }
+    .feature-cmd-tag {
+      padding: 3px 10px; background: var(--bg-primary);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 12px; color: var(--text-secondary); font-family: monospace;
+    }
+    .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--bg-primary); border: 2px solid var(--border);
+      border-radius: 13px; cursor: pointer; transition: all 0.3s;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--text-muted); transition: all 0.3s;
+    }
+    .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+    .toggle input:checked + .toggle-track::after { transform: translateX(22px); background: #fff; }
+    .toggle input:disabled + .toggle-track { opacity: 0.5; cursor: not-allowed; }
+    .restart-section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    }
+    .restart-info h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .restart-info p { color: var(--text-secondary); font-size: 13px; }
+    .btn-restart {
+      padding: 10px 24px; background: var(--red); border: none;
+      border-radius: var(--radius-sm); color: #fff; font-weight: 600;
+      font-family: inherit; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; gap: 6px; transition: opacity 0.2s;
+    }
+    .btn-restart:hover { opacity: 0.85; }
+    .btn-restart:disabled { opacity: 0.4; cursor: not-allowed; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 20px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      animation: toastIn 0.3s ease-out;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error { border-left: 3px solid var(--red); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .refresh-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 200; border-radius: 0 2px 2px 0; }
+    .conn-lost {
+      background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3);
+      color: var(--red); text-align: center; padding: 10px; font-size: 14px; font-weight: 500; display: none;
+    }
+    .conn-lost.visible { display: block; }
+    @media (max-width: 640px) {
+      .header { padding: 0 16px; }
+      .content { padding: 20px 16px; }
+      .server-card { padding: 20px; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="refresh-bar" id="refreshBar"></div>
+  <div class="conn-lost" id="connLost">
+    <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">wifi_off</span>
+    Connexion au bot perdue — reconnexion automatique...
+  </div>
+
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <span class="material-icons-round" style="font-size:56px;color:var(--accent)">smart_toy</span>
+      <h2>GAMER MG BOT</h2>
+      <p>Dashboard de contrôle</p>
+      <input type="password" id="apiKeyInput" placeholder="Clé API" autocomplete="off">
+      <div class="error-msg" id="loginError"></div>
+      <button onclick="doLogin()">Connexion</button>
+    </div>
+  </div>
+
+  <div class="dashboard" id="dashboard">
+    <header class="header">
+      <div class="header-left">
+        <div class="header-logo">
+          <span class="material-icons-round" style="color:#fff;font-size:20px">smart_toy</span>
+        </div>
+        <span class="header-title">GAMER MG BOT</span>
+      </div>
+      <div class="header-right">
+        <div class="header-badge">
+          <div class="status-dot" id="headerDot"></div>
+          <span id="headerStatus">...</span>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">
+          <span class="material-icons-round" style="font-size:16px">logout</span>
+          Déco
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="server-card" id="serverCard">
+        <div class="server-icon" id="serverIcon">
+          <span class="material-icons-round">dns</span>
+        </div>
+        <div class="server-info">
+          <div class="server-name" id="serverName">Chargement...</div>
+          <div class="server-meta" id="serverMeta"></div>
+        </div>
+      </div>
+
+      <div class="bot-card">
+        <div><div class="bot-stat-label">Statut</div><div class="bot-stat-value accent" id="statStatus"><span class="spinner"></span></div></div>
+        <div><div class="bot-stat-label">Uptime</div><div class="bot-stat-value" id="statUptime">--</div></div>
+        <div><div class="bot-stat-label">Commandes</div><div class="bot-stat-value" id="statCommands">--</div></div>
+        <div><div class="bot-stat-label">Mémoire</div><div class="bot-stat-value" id="statMemory">--</div></div>
+      </div>
+
+      <div class="section-title">
+        <span class="material-icons-round">tune</span>
+        Fonctionnalités
+      </div>
+      <div class="features-grid" id="featuresGrid">
+        <div style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px"><span class="spinner"></span></div>
+      </div>
+
+      <div class="restart-section">
+        <div class="restart-info">
+          <h3>Redémarrer le bot</h3>
+          <p>Le bot sera indisponible pendant 30-60 secondes.</p>
+        </div>
+        <button class="btn-restart" onclick="doRestart()">
+          <span class="material-icons-round" style="font-size:18px">restart_alt</span>
+          Redémarrer
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const BOT_API = 'https://discord-bot-geaq.onrender.com';
+    const REFRESH = 15;
+    let apiKey = sessionStorage.getItem('botApiKey') || '';
+    let timer = null, progress = 0, pTimer = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (apiKey) showDashboard();
+      else document.getElementById('apiKeyInput').focus();
+      document.getElementById('apiKeyInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    });
+
+    async function doLogin() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      const err = document.getElementById('loginError');
+      if (!key) { err.textContent = 'Entre une clé API'; return; }
+      err.textContent = '';
+      try {
+        const r = await fetch(BOT_API + '/api/status?key=' + encodeURIComponent(key));
+        if (!r.ok) { err.textContent = 'Clé API invalide'; return; }
+        apiKey = key;
+        sessionStorage.setItem('botApiKey', key);
+        showDashboard();
+      } catch { err.textContent = 'Impossible de contacter le bot'; }
+    }
+
+    function doLogout() {
+      apiKey = '';
+      sessionStorage.removeItem('botApiKey');
+      clearInterval(timer); clearInterval(pTimer);
+      document.getElementById('dashboard').classList.remove('active');
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('apiKeyInput').value = '';
+    }
+
+    function showDashboard() {
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('active');
+      fetchAll();
+      startAutoRefresh();
+    }
+
+    async function fetchAll() {
+      try {
+        const [sr, fr] = await Promise.all([
+          fetch(BOT_API + '/api/status?key=' + encodeURIComponent(apiKey)),
+          fetch(BOT_API + '/api/features?key=' + encodeURIComponent(apiKey)),
+        ]);
+        if (!sr.ok || !fr.ok) throw 0;
+        renderStatus(await sr.json());
+        renderFeatures((await fr.json()).features);
+        document.getElementById('connLost').classList.remove('visible');
+      } catch { document.getElementById('connLost').classList.add('visible'); }
+    }
+
+    function startAutoRefresh() {
+      clearInterval(timer); clearInterval(pTimer); progress = 0;
+      timer = setInterval(() => { progress = 0; fetchAll(); }, REFRESH * 1000);
+      const bar = document.getElementById('refreshBar');
+      pTimer = setInterval(() => { progress += 100 / (REFRESH * 10); bar.style.width = Math.min(progress, 100) + '%'; }, 100);
+    }
+
+    function renderStatus(d) {
+      const on = d.status === 'online';
+      document.getElementById('headerDot').classList.toggle('online', on);
+      document.getElementById('headerStatus').textContent = on ? 'En ligne' : 'Hors ligne';
+      if (d.guild) {
+        document.getElementById('serverName').textContent = d.guild.name;
+        const ic = document.getElementById('serverIcon');
+        ic.innerHTML = d.guild.icon ? '<img src="' + d.guild.icon + '" alt="icon">' : '<span class="material-icons-round">dns</span>';
+        document.getElementById('serverMeta').innerHTML =
+          '<span><span class="material-icons-round">people</span> ' + d.guild.memberCount + ' membres</span>' +
+          '<span><span class="material-icons-round">tag</span> ' + d.guild.id + '</span>';
+      }
+      document.getElementById('statStatus').innerHTML = on ? '<span style="color:var(--green)">En ligne</span>' : '<span style="color:var(--red)">Hors ligne</span>';
+      document.getElementById('statUptime').textContent = fmtUp(d.uptime);
+      document.getElementById('statCommands').textContent = d.commandsCount;
+      document.getElementById('statMemory').textContent = d.memoryUsage + ' MB';
+    }
+
+    function renderFeatures(feat) {
+      const g = document.getElementById('featuresGrid');
+      g.innerHTML = Object.entries(feat).map(([k, f]) =>
+        '<div class="feature-card ' + (f.enabled ? '' : 'disabled') + '" id="card-' + k + '">' +
+        '<div class="feature-header"><div class="feature-header-left">' +
+        '<div class="feature-icon" style="background:' + f.color + '"><span class="material-icons-round">' + f.icon + '</span></div>' +
+        '<span class="feature-name">' + f.label + '</span></div>' +
+        '<label class="toggle"><input type="checkbox" ' + (f.enabled ? 'checked' : '') + ' onchange="toggleF(\'' + k + '\',this.checked)"><div class="toggle-track"></div></label></div>' +
+        '<div class="feature-desc">' + f.description + '</div>' +
+        (f.commands.length ? '<div class="feature-commands">' + f.commands.map(c => '<span class="feature-cmd-tag">/' + c + '</span>').join('') + '</div>' : '') +
+        '</div>'
+      ).join('');
+    }
+
+    async function toggleF(feature, enabled) {
+      const card = document.getElementById('card-' + feature);
+      const cb = card?.querySelector('input[type=checkbox]');
+      if (cb) cb.disabled = true;
+      try {
+        const r = await fetch(BOT_API + '/api/features/toggle?key=' + encodeURIComponent(apiKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature, enabled }),
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.error);
+        card?.classList.toggle('disabled', !enabled);
+        toast((enabled ? 'ON' : 'OFF') + ' : ' + feature, 'success');
+      } catch (e) { toast('Erreur : ' + e.message, 'error'); if (cb) cb.checked = !enabled; }
+      finally { if (cb) cb.disabled = false; }
+    }
+
+    async function doRestart() {
+      if (!confirm('Redémarrer le bot ? (30-60s indisponible)')) return;
+      const b = document.querySelector('.btn-restart'); b.disabled = true; b.innerHTML = '<span class="spinner"></span> ...';
+      try {
+        const r = await fetch(BOT_API + '/api/restart?key=' + encodeURIComponent(apiKey), { method: 'POST' });
+        const d = await r.json();
+        if (d.success) { toast('Redémarrage en cours...', 'success'); setTimeout(fetchAll, 30000); }
+      } catch { toast('Erreur', 'error'); }
+      finally { b.disabled = false; b.innerHTML = '<span class="material-icons-round" style="font-size:18px">restart_alt</span> Redémarrer'; }
+    }
+
+    function fmtUp(s) {
+      if (!s) return '--';
+      const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60), sec = s%60;
+      const p = [];
+      if (d) p.push(d+'j'); if (h) p.push(h+'h'); if (m) p.push(m+'m'); if (!d && !h) p.push(sec+'s');
+      return p.join(' ') || '0s';
+    }
+
+    function toast(msg, type) {
+      const c = document.getElementById('toastContainer');
+      const el = document.createElement('div'); el.className = 'toast ' + type; el.textContent = msg;
+      c.appendChild(el); setTimeout(() => el.remove(), 3500);
+    }
+  </script>
+</body>
+</html>

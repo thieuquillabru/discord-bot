@@ -1,7 +1,10 @@
+const { isFeatureEnabled } = require('../features');
+
 module.exports = {
   name: 'messageDelete',
   once: false,
   async execute(message) {
+    if (!isFeatureEnabled('messagelog')) return;
     if (message.author.bot) return;
     if (message.system) return;
 
