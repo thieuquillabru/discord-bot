@@ -2,7 +2,7 @@ const {
   ChannelType, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle,
 } = require('discord.js');
 const config = require('../config');
-const { isFeatureEnabled, getFeatureForCommand, FEATURE_DEFINITIONS } = require('../features');
+const { isFeatureEnabled, isCommandEnabled, getFeatureForCommand, FEATURE_DEFINITIONS } = require('../features');
 
 module.exports = {
   name: 'interactionCreate',
@@ -16,6 +16,9 @@ module.exports = {
       const featureKey = getFeatureForCommand(interaction.commandName);
       if (featureKey && !isFeatureEnabled(featureKey)) {
         return interaction.reply({ content: `❌ **${FEATURE_DEFINITIONS[featureKey].label}** est désactivé.`, ephemeral: true });
+      }
+      if (!isCommandEnabled(interaction.commandName)) {
+        return interaction.reply({ content: `❌ La commande **/${interaction.commandName}** est désactivée.`, ephemeral: true });
       }
 
       // Universal wrapper: supports both old (message-style) and new (interaction-style) commands

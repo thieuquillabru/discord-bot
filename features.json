@@ -1,1 +1,184 @@
-{"moderation":{"enabled":true},"welcome":{"enabled":true},"tickets":{"enabled":true},"fun":{"enabled":true},"utility":{"enabled":true},"messagelog":{"enabled":true},"economy":{"enabled":true},"levels":{"enabled":true},"gambling":{"enabled":true},"games":{"enabled":true},"social":{"enabled":true},"utilitaires":{"enabled":true}}
+{
+  "moderation": {
+    "enabled": true,
+    "commands": {
+      "kick": true,
+      "ban": true,
+      "mute": true,
+      "unmute": true,
+      "warn": true,
+      "clear": true,
+      "lock": true,
+      "unlock": true,
+      "slowmode": true
+    },
+    "settings": {
+      "modRole": "",
+      "logChannel": "",
+      "defaultClearAmount": 10,
+      "muteRole": ""
+    }
+  },
+  "welcome": {
+    "enabled": true,
+    "commands": {},
+    "settings": {
+      "channel": "",
+      "message": "Bienvenue {member} sur **{server}** ! \nNous sommes maintenant **{count}** membres.",
+      "dmEnabled": false
+    }
+  },
+  "tickets": {
+    "enabled": true,
+    "commands": { "ticket": true },
+    "settings": {
+      "category": "",
+      "supportRole": "",
+      "ticketLogChannel": ""
+    }
+  },
+  "fun": {
+    "enabled": true,
+    "commands": {
+      "8ball": true,
+      "dice": true,
+      "meme": true,
+      "rps": true,
+      "snipe": true,
+      "joke": true,
+      "couple": true
+    },
+    "settings": {
+      "memeSubreddit": "memes"
+    }
+  },
+  "economy": {
+    "enabled": true,
+    "commands": {
+      "daily": true,
+      "work": true,
+      "rob": true,
+      "beg": true,
+      "pay": true,
+      "money": true,
+      "bank": true,
+      "shop": true,
+      "buy": true,
+      "inventory": true,
+      "item": true,
+      "topmoney": true,
+      "dropmoney": true
+    },
+    "settings": {
+      "startingBalance": 1000,
+      "dailyAmount": 500,
+      "workMin": 100,
+      "workMax": 500,
+      "robSuccessRate": 30,
+      "bankInterest": 0,
+      "currency": "coins"
+    }
+  },
+  "levels": {
+    "enabled": true,
+    "commands": {
+      "level": true,
+      "toplevel": true,
+      "profile": true,
+      "description": true,
+      "rewards": true,
+      "dropxp": true,
+      "adminxp": true
+    },
+    "settings": {
+      "xpPerMessage": 15,
+      "xpMinLength": 5,
+      "xpCooldown": 30,
+      "levelUpMessage": true,
+      "levelUpChannel": ""
+    }
+  },
+  "gambling": {
+    "enabled": true,
+    "commands": {
+      "coinflip": true,
+      "slots": true,
+      "roulette": true
+    },
+    "settings": {
+      "minBet": 10,
+      "maxBet": 100000,
+      "coinflipMultiplier": 1.9
+    }
+  },
+  "games": {
+    "enabled": true,
+    "commands": {
+      "tictactoe": true,
+      "hangman": true,
+      "minesweeper": true,
+      "connect4": true
+    },
+    "settings": {
+      "timeout": 60
+    }
+  },
+  "social": {
+    "enabled": true,
+    "commands": {
+      "giveaway": true,
+      "interact": true,
+      "suggest": true,
+      "survey": true,
+      "birthday": true
+    },
+    "settings": {
+      "giveawayChannel": "",
+      "suggestChannel": "",
+      "birthdayChannel": ""
+    }
+  },
+  "utility": {
+    "enabled": true,
+    "commands": {
+      "help": true,
+      "ping": true,
+      "userinfo": true,
+      "serverinfo": true,
+      "avatar": true,
+      "remind": true,
+      "poll": true,
+      "setup": true
+    },
+    "settings": {
+      "prefix": "/"
+    }
+  },
+  "utilitaires": {
+    "enabled": true,
+    "commands": {
+      "color": true,
+      "embed": true,
+      "maths": true,
+      "say": true,
+      "timestamp": true,
+      "qrcode": true,
+      "react": true,
+      "role": true,
+      "backup": true,
+      "suggestmod": true
+    },
+    "settings": {
+      "embedChannel": ""
+    }
+  },
+  "messagelog": {
+    "enabled": true,
+    "commands": {},
+    "settings": {
+      "logChannel": "",
+      "ignoreBots": true,
+      "maxSnipes": 50
+    }
+  }
+}
