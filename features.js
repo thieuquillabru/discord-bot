@@ -12,36 +12,78 @@ const FEATURE_DEFINITIONS = {
     commands: ['kick', 'ban', 'mute', 'unmute', 'warn', 'clear', 'lock', 'unlock', 'slowmode'],
   },
   welcome: {
-    label: 'Messages de bienvenue',
+    label: 'Bienvenue',
     description: 'Message automatique quand un membre rejoint le serveur',
     icon: 'waving_hand',
     color: '#2ECC71',
     commands: [],
   },
   tickets: {
-    label: 'Système de tickets',
+    label: 'Tickets',
     description: 'Création et gestion de tickets de support',
     icon: 'confirmation_number',
     color: '#F39C12',
     commands: ['ticket'],
   },
   fun: {
-    label: 'Commandes fun',
-    description: '8ball, Dice, Meme, Pierre-Papier-Ciseaux, Snipe',
+    label: 'Fun',
+    description: '8ball, Dice, Meme, RPS, Snipe, Joke, Couple',
     icon: 'sports_esports',
     color: '#9B59B6',
-    commands: ['8ball', 'dice', 'meme', 'rps', 'snipe'],
+    commands: ['8ball', 'dice', 'meme', 'rps', 'snipe', 'joke', 'couple'],
   },
-  utility: {
-    label: 'Utilitaires',
+  economy: {
+    label: 'Économie',
+    description: 'Daily, Work, Rob, Beg, Pay, Money, Bank, Shop, Buy, Inventory, Item, TopMoney, DropMoney',
+    icon: 'paid',
+    color: '#FFD700',
+    commands: ['daily', 'work', 'rob', 'beg', 'pay', 'money', 'bank', 'shop', 'buy', 'inventory', 'item', 'topmoney', 'dropmoney'],
+  },
+  levels: {
+    label: 'Niveaux / XP',
+    description: 'Level, TopLevel, Profile, Description, Rewards, DropXP, AdminXP + XP automatique',
+    icon: 'trending_up',
+    color: '#00BCD4',
+    commands: ['level', 'toplevel', 'profile', 'description', 'rewards', 'dropxp', 'adminxp'],
+  },
+  gambling: {
+    label: 'Jeux d\'argent',
+    description: 'CoinFlip, Slots, Roulette',
+    icon: 'casino',
+    color: '#FF5722',
+    commands: ['coinflip', 'slots', 'roulette'],
+  },
+  games: {
+    label: 'Jeux multijoueurs',
+    description: 'Tic-Tac-Toe, Pendu, Démineur, Puissance 4',
+    icon: 'videogame_asset',
+    color: '#E91E63',
+    commands: ['tictactoe', 'hangman', 'minesweeper', 'connect4'],
+  },
+  social: {
+    label: 'Social / Événements',
+    description: 'Giveaway, Interact, Suggest, Survey, Birthday',
+    icon: 'groups',
+    color: '#4CAF50',
+    commands: ['giveaway', 'interact', 'suggest', 'survey', 'birthday'],
+  },
+ utility: {
+    label: 'Utilitaires bot',
     description: 'Help, Ping, Userinfo, Serverinfo, Avatar, Remind, Poll, Setup',
     icon: 'build',
     color: '#3498DB',
     commands: ['help', 'ping', 'userinfo', 'serverinfo', 'avatar', 'remind', 'poll', 'setup'],
   },
+ utilitaires: {
+    label: 'Outils avancés',
+    description: 'Color, Embed, Maths, Say, Timestamp, QRCode, React, Role, Backup, SuggestMod',
+    icon: 'settings',
+    color: '#607D8B',
+    commands: ['color', 'embed', 'maths', 'say', 'timestamp', 'qrcode', 'react', 'role', 'backup', 'suggestmod'],
+  },
   messagelog: {
-    label: 'Log des messages',
-    description: 'Sauvegarde les messages supprimés pour la commande snipe',
+    label: 'Log messages',
+    description: 'Sauvegarde les messages supprimés (snipe)',
     icon: 'delete_sweep',
     color: '#1ABC9C',
     commands: [],
@@ -53,9 +95,7 @@ function loadFeatures() {
     return JSON.parse(fs.readFileSync(FEATURES_FILE, 'utf8'));
   } catch {
     const defaults = {};
-    for (const key of Object.keys(FEATURE_DEFINITIONS)) {
-      defaults[key] = { enabled: true };
-    }
+    for (const key of Object.keys(FEATURE_DEFINITIONS)) defaults[key] = { enabled: true };
     fs.writeFileSync(FEATURES_FILE, JSON.stringify(defaults, null, 2));
     return defaults;
   }
@@ -89,20 +129,9 @@ function getAllFeatures() {
   const states = loadFeatures();
   const result = {};
   for (const [key, def] of Object.entries(FEATURE_DEFINITIONS)) {
-    result[key] = {
-      ...def,
-      enabled: states[key]?.enabled !== false,
-    };
+    result[key] = { ...def, enabled: states[key]?.enabled !== false };
   }
   return result;
 }
 
-module.exports = {
-  FEATURE_DEFINITIONS,
-  loadFeatures,
-  saveFeatures,
-  isFeatureEnabled,
-  toggleFeature,
-  getFeatureForCommand,
-  getAllFeatures,
-};
+module.exports = { FEATURE_DEFINITIONS, loadFeatures, saveFeatures, isFeatureEnabled, toggleFeature, getFeatureForCommand, getAllFeatures };

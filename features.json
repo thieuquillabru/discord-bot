@@ -1,1 +1,1 @@
-{"moderation": {"enabled": true}, "welcome": {"enabled": true}, "tickets": {"enabled": true}, "fun": {"enabled": true}, "utility": {"enabled": true}, "messagelog": {"enabled": true}}
+{"moderation":{"enabled":true},"welcome":{"enabled":true},"tickets":{"enabled":true},"fun":{"enabled":true},"utility":{"enabled":true},"messagelog":{"enabled":true},"economy":{"enabled":true},"levels":{"enabled":true},"gambling":{"enabled":true},"games":{"enabled":true},"social":{"enabled":true},"utilitaires":{"enabled":true}}

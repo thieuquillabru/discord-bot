@@ -1,16 +1,24 @@
 const config = require('../config');
+const { isFeatureEnabled } = require('../features');
+const db = require('../database');
 
 module.exports = {
   name: 'messageCreate',
   once: false,
   async execute(message, client) {
-    // Ignorer les messages des bots
-    if (message.author.bot) return;
+    if (message.author.bot || !message.guild) return;
 
-    // Vérifier le préfixe
+    // ── XP automatique (15-25 XP par message, cooldown 60s) ─────
+    if (isFeatureEnabled('levels')) {
+      const xpCD = message.author.id + '_xp_msg';
+      if (!db.checkCooldown(message.guild.id, message.author.id, 'xp_msg', 60000)) {
+        const xp = Math.floor(Math.random() * 11) + 15;
+        db.addXP(message.guild.id, message.author.id, xp);
+      }
+    }
+
+    // Prefix commands (legacy)
     if (!message.content.startsWith(config.prefix)) return;
-
-    // Parser la commande
     const args = message.content.slice(config.prefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 
