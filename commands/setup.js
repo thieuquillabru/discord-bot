@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,11 +8,16 @@ module.exports = {
   usage: '<welcome|tickets|modrole> <valeur>',
   permissions: [PermissionFlagsBits.Administrator],
   cooldown: 10,
+  slash: new SlashCommandBuilder().setName('setup').setDescription('Configure les parametres du bot').addStringOption(o => o.setName('option').setDescription('welcome | tickets | modrole').setRequired(true)).addStringOption(o => o.setName('valeur').setDescription('La valeur a definir')),
   async execute(message, args) {
-    const sub = args[0]?.toLowerCase();
+    const isSlash = !!message._interaction;
+    const interaction = message._interaction;
+    const sub = isSlash ? interaction.options.getString('option') : args[0]?.toLowerCase();
 
     if (sub === 'welcome') {
-      const channel = message.mentions.channels.first();
+      const channel = isSlash
+        ? interaction.options.getChannel('valeur')
+        : message.mentions.channels.first();
       if (!channel) {
         return message.reply("❌ Mentionne le canal de bienvenue.\nUtilisation : `!setup welcome <#canal>`");
       }
@@ -23,18 +28,32 @@ module.exports = {
     }
 
     if (sub === 'tickets') {
-      const category = message.mentions.channels.first();
-      if (!category) {
+      const channel = isSlash
+        ? interaction.options.getChannel('valeur')
+        : message.mentions.channels.first();
+      if (!channel) {
         return message.reply("❌ Mentionne la catégorie pour les tickets.\nUtilisation : `!setup tickets <#catégorie>`");
       }
-      updateEnv('TICKET_CATEGORY_ID', category.id);
+      updateEnv('TICKET_CATEGORY_ID', channel.id);
       const config = require('../config');
-      config.tickets.categoryId = category.id;
-      return message.reply(`✅ Catégorie des tickets configurée : ${category}`);
+      config.tickets.categoryId = channel.id;
+      return message.reply(`✅ Catégorie des tickets configurée : ${channel}`);
     }
 
     if (sub === 'modrole') {
-      const role = message.mentions.roles.first();
+      let role;
+      if (isSlash) {
+        const mentionable = interaction.options.getMentionable('valeur');
+        if (mentionable && mentionable.role) {
+          role = mentionable;
+        } else if (mentionable && mentionable.user) {
+          return message.reply('❌ Tu dois sélectionner un rôle, pas un utilisateur.');
+        } else {
+          role = null;
+        }
+      } else {
+        role = message.mentions.roles.first();
+      }
       if (!role) {
         return message.reply("❌ Mentionne le rôle de modérateur.\nUtilisation : `!setup modrole <@rôle>`");
       }

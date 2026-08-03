@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'slowmode' },
@@ -6,6 +6,7 @@ module.exports = {
   usage: '<durée en secondes (0 pour désactiver)>',
   permissions: [PermissionFlagsBits.ManageChannels],
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('slowmode').setDescription('Definit un ralentisseur sur le canal').addIntegerOption(o => o.setName('secondes').setDescription('Duree en secondes (0 pour desactiver, max 21600)').setRequired(true).setMinValue(0).setMaxValue(21600)),
   async execute(message, args) {
     const seconds = parseInt(args[0]);
 

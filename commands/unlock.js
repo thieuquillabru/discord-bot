@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'unlock' },
@@ -6,6 +6,7 @@ module.exports = {
   usage: '[raison]',
   permissions: [PermissionFlagsBits.ManageChannels],
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('unlock').setDescription('Deverrouille le canal actuel').addStringOption(o => o.setName('raison').setDescription('La raison')),
   async execute(message, args) {
     const reason = args.join(' ') || 'Aucune raison spécifiée';
     const channel = message.channel;

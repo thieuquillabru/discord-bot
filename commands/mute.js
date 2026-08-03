@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 const ms = require('ms');
 
 module.exports = {
@@ -8,6 +8,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.ModerateMembers],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('mute').setDescription('Rend un membre muet pendant une duree donnee').addUserOption(o => o.setName('membre').setDescription('Le membre a mute').setRequired(true)).addStringOption(o => o.setName('duree').setDescription('Duree (ex: 10m, 1h, 1d)').setRequired(true)).addStringOption(o => o.setName('raison').setDescription('La raison du mute')),
   async execute(message, args) {
     const target = message.mentions.members.first();
     if (!target) {

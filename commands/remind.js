@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 // Stockage des rappels
 const reminders = new Map();
@@ -8,6 +8,7 @@ module.exports = {
   description: 'Définit un rappel privé',
   usage: '<durée> <message>',
   cooldown: 10,
+  slash: new SlashCommandBuilder().setName('remind').setDescription('Definit un rappel prive').addStringOption(o => o.setName('duree').setDescription('Duree (ex: 10m, 1h, 1d)').setRequired(true)).addStringOption(o => o.setName('message').setDescription('Le message du rappel').setRequired(true)),
   async execute(message, args) {
     if (args.length < 2) {
       return message.reply('❌ Format invalide.\nUtilisation : `!remind <durée> <message>`\nExemple : `!remind 10m Vérifier les logs`');

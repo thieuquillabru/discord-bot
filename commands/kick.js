@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'kick' },
@@ -7,6 +7,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.KickMembers],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('kick').setDescription('Expulse un membre du serveur').addUserOption(o => o.setName('membre').setDescription('Le membre a expulser').setRequired(true)).addStringOption(o => o.setName('raison').setDescription('La raison de l\'expulsion')),
   async execute(message, args) {
     const target = message.mentions.members.first();
     if (!target) {

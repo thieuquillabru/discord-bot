@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, SlashCommandBuilder } = require('discord.js');
 const config = require('../config');
 
 // Stockage des tickets en mémoire (pourrait être remplacé par une BDD)
@@ -9,8 +9,11 @@ module.exports = {
   description: 'Gère les tickets de support',
   usage: '<create|close|add|remove>',
   cooldown: 10,
+  slash: new SlashCommandBuilder().setName('ticket').setDescription('Gere les tickets de support').addStringOption(o => o.setName('action').setDescription('create | close | add | setup').setRequired(true)).addUserOption(o => o.setName('membre').setDescription('Membre a ajouter (pour add)')),
   async execute(message, args, client) {
-    const subcommand = args[0]?.toLowerCase();
+    const isSlash = !!message._interaction;
+    const interaction = message._interaction;
+    const subcommand = isSlash ? interaction.options.getString('action') : args[0]?.toLowerCase();
 
     switch (subcommand) {
       case 'setup':
@@ -21,6 +24,13 @@ module.exports = {
       case 'close':
         return handleClose(message, client);
       case 'add':
+        if (isSlash) {
+          const targetMember = interaction.options.getUser('membre');
+          if (targetMember) {
+            return handleAddWithMember(message, targetMember);
+          }
+          return message.reply('❌ Mentionne un membre à ajouter au ticket.');
+        }
         return handleAdd(message, args);
       default:
         return message.reply({
@@ -161,6 +171,17 @@ async function handleAdd(message, args) {
   const target = message.mentions.members.first();
   if (!target) {
     return message.reply('❌ Mentionne un membre à ajouter au ticket.\nUtilisation : `!ticket add <@membre>`');
+  }
+
+  return handleAddWithMember(message, target);
+}
+
+async function handleAddWithMember(message, targetMember) {
+  const target = typeof targetMember === 'object' && targetMember.guild
+    ? targetMember
+    : message.guild.members.cache.get(targetMember.id);
+  if (!target) {
+    return message.reply('❌ Impossible de trouver ce membre.');
   }
 
   try {

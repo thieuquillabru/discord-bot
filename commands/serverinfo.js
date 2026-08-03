@@ -1,9 +1,10 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'serverinfo' },
   description: 'Affiche les informations détaillées sur le serveur',
   cooldown: 10,
+  slash: new SlashCommandBuilder().setName('serverinfo').setDescription('Affiche les informations detaillees sur le serveur'),
   async execute(message) {
     const guild = message.guild;
 

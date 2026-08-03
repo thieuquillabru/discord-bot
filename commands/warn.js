@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -34,6 +34,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.ModerateMembers],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('warn').setDescription('Avertit un membre du serveur').addUserOption(o => o.setName('membre').setDescription('Le membre a avertir').setRequired(true)).addStringOption(o => o.setName('raison').setDescription('La raison de l\'avertissement')),
   async execute(message, args) {
     const target = message.mentions.members.first();
     if (!target) {

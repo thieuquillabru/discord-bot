@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 // Stockage des derniers messages supprimés par canal
 const deletedMessages = new Map();
@@ -7,6 +7,7 @@ module.exports = {
   data: { name: 'snipe' },
   description: 'Affiche le dernier message supprimé dans ce canal',
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('snipe').setDescription('Affiche le dernier message supprime dans ce canal'),
   async execute(message) {
     const key = message.channel.id;
     const sniped = deletedMessages.get(key);

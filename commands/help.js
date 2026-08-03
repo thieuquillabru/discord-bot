@@ -1,9 +1,10 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'help' },
   description: 'Affiche la liste des commandes disponibles',
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('help').setDescription('Affiche la liste des commandes disponibles').addStringOption(o => o.setName('commande').setDescription('Commande specifique pour plus de details')),
   async execute(message, args, client) {
     const commands = client.commands.map(cmd => {
       const name = cmd.data.name;

@@ -12,6 +12,62 @@ module.exports = {
   name: 'interactionCreate',
   once: false,
   async execute(interaction, client) {
+    // ── Slash Command Handler ───────────────────────────────────────
+    if (interaction.isChatInputCommand()) {
+      const command = client.commands.get(interaction.commandName);
+      if (!command) return;
+      const args = [];
+      // Convert interaction to message-like object
+      const fakeMessage = {
+        _interaction: interaction,
+        author: interaction.user,
+        member: interaction.member,
+        guild: interaction.guild,
+        channel: interaction.channel,
+        client: interaction.client,
+        createdTimestamp: interaction.createdTimestamp,
+        mentions: {
+          users: {
+            first: () => interaction.options.getUser('membre'),
+          },
+          members: {
+            first: () => {
+              const user = interaction.options.getUser('membre');
+              return user ? interaction.guild.members.cache.get(user.id) || null : null;
+            },
+          },
+          channels: {
+            first: () => interaction.options.getChannel('valeur'),
+          },
+          roles: {
+            first: () => {
+              const mentionable = interaction.options.getMentionable('valeur');
+              return mentionable && mentionable.role ? mentionable.role : null;
+            },
+          },
+        },
+        reply: async (options) => {
+          if (typeof options === 'string') options = { content: options };
+          if (interaction.replied || interaction.deferred) return interaction.followUp({ ...options, ephemeral: options.ephemeral || false });
+          return interaction.reply({ ...options, ephemeral: options.ephemeral || false });
+        },
+        edit: async (options) => {
+          if (typeof options === 'string') options = { content: options };
+          return interaction.editReply(options);
+        },
+        delete: async () => {},
+      };
+      try {
+        await command.execute(fakeMessage, args, client);
+      } catch (err) {
+        console.error('Slash cmd error:', err);
+        const reply = { content: 'Une erreur est survenue.', ephemeral: true };
+        if (interaction.replied || interaction.deferred) await interaction.followUp(reply);
+        else await interaction.reply(reply);
+      }
+      return;
+    }
+
     if (!interaction.isButton()) return;
 
     const { customId, user, guild } = interaction;

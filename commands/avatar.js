@@ -1,10 +1,11 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'avatar' },
   description: 'Affiche la photo de profil d\'un membre en grand format',
   usage: '[@membre]',
   cooldown: 3,
+  slash: new SlashCommandBuilder().setName('avatar').setDescription('Affiche la photo de profil en grand format').addUserOption(o => o.setName('membre').setDescription('Le membre cible')),
   async execute(message, args) {
     const target = message.mentions.users.first() || message.author;
 

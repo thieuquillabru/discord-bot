@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'clear' },
@@ -7,6 +7,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.ManageMessages],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('clear').setDescription('Supprime des messages dans le canal actuel').addIntegerOption(o => o.setName('nombre').setDescription('Nombre de messages a supprimer (1-100)').setRequired(true).setMinValue(1).setMaxValue(100)).addUserOption(o => o.setName('membre').setDescription('Filtrer par membre')),
   async execute(message, args) {
     const amount = parseInt(args[0]);
     if (!amount || amount < 1 || amount > 100) {

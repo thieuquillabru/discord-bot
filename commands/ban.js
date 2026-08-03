@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'ban' },
@@ -7,6 +7,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.BanMembers],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('ban').setDescription('Bannit un membre du serveur').addUserOption(o => o.setName('membre').setDescription('Le membre a bannir').setRequired(true)).addStringOption(o => o.setName('raison').setDescription('La raison du bannissement')).addIntegerOption(o => o.setName('jours').setDescription('Nombre de jours de messages a supprimer (0-7)').setMinValue(0).setMaxValue(7)),
   async execute(message, args) {
     const target = message.mentions.members.first();
     if (!target) {

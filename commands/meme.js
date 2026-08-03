@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 // Liste de memes statiques (sans API externe)
 const memes = [
@@ -48,6 +48,7 @@ module.exports = {
   data: { name: 'meme' },
   description: 'Affiche un meme aléatoire pour faire rire le serveur',
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('meme').setDescription('Affiche un meme aleatoire'),
   async execute(message) {
     const meme = memes[Math.floor(Math.random() * memes.length)];
 

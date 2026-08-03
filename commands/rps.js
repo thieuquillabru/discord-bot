@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } = require('discord.js');
 
 const CHOICES = [
   { name: 'Pierre', emoji: '🪨', beats: 'Ciseaux' },
@@ -13,6 +13,7 @@ module.exports = {
   data: { name: 'rps' },
   description: 'Joue au Pierre-Papier-Ciseaux contre le bot',
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('rps').setDescription('Joue au Pierre-Papier-Ciseaux contre le bot'),
   async execute(message) {
     // Vérifier si l'utilisateur a déjà une partie en cours
     if (activeGames.has(message.author.id)) {

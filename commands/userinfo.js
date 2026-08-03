@@ -1,10 +1,11 @@
-const { EmbedBuilder, PermissionFlagsBits, time } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, time, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'userinfo' },
   description: 'Affiche les informations détaillées sur un membre',
   usage: '[@membre]',
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('userinfo').setDescription('Affiche les infos detaillees sur un membre').addUserOption(o => o.setName('membre').setDescription('Le membre cible')),
   async execute(message, args) {
     const target = message.mentions.members.first() || message.member;
 

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 const responses = [
   'Oui, absolument ! ✨',
@@ -20,6 +20,7 @@ module.exports = {
   description: 'Pose une question et la boule magique y répondra',
   usage: '<ta question>',
   cooldown: 3,
+  slash: new SlashCommandBuilder().setName('8ball').setDescription('Pose une question et la boule magique repondra').addStringOption(o => o.setName('question').setDescription('Ta question').setRequired(true)),
   async execute(message, args) {
     const question = args.join(' ');
     if (!question) {

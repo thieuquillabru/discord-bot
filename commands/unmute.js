@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'unmute' },
@@ -7,6 +7,7 @@ module.exports = {
   permissions: [PermissionFlagsBits.ModerateMembers],
   requireModRole: false,
   cooldown: 5,
+  slash: new SlashCommandBuilder().setName('unmute').setDescription('Retire le mute d\'un membre').addUserOption(o => o.setName('membre').setDescription('Le membre a unmute').setRequired(true)),
   async execute(message, args) {
     const target = message.mentions.members.first();
     if (!target) {

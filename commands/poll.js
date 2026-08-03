@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: { name: 'poll' },
@@ -6,6 +6,7 @@ module.exports = {
   usage: '<question> | <option1> | <option2> | ...',
   permissions: [PermissionFlagsBits.ManageMessages],
   cooldown: 10,
+  slash: new SlashCommandBuilder().setName('poll').setDescription('Cree un sondage avec des reactions').addStringOption(o => o.setName('question').setDescription('La question du sondage').setRequired(true)).addStringOption(o => o.setName('options').setDescription('Options separees par des pipes | (min 2)').setRequired(true)),
   async execute(message, args) {
     const input = args.join(' ');
     if (!input.includes('|') || input.split('|').length < 3) {
