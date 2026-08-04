@@ -667,8 +667,8 @@
         <div class="form-group">
           <label class="form-label"><span class="material-icons-round">image</span> Image</label>
           <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('shopFieldImage').click()">
-            <span class="material-icons-round">cloud_upload</span>
-            <span>CLIQUER OU GLISSER UNE IMAGE</span>
+            <span class="material-icons-round" id="uploadIcon">cloud_upload</span>
+            <span id="uploadText">CLIQUER OU GLISSER UNE IMAGE</span>
             <input type="file" id="shopFieldImage" accept="image/*">
           </div>
         </div>
@@ -1132,14 +1132,14 @@
       const area = document.getElementById('imageUploadArea');
       const existingImg = area.querySelector('img');
       if (existingImg) existingImg.remove();
-      area.querySelector('span:last-child').style.display = '';
-      area.querySelector('.material-icons-round').style.display = '';
+      document.getElementById('uploadIcon').style.display = '';
+      document.getElementById('uploadText').style.display = '';
       if (product && product.image) {
         const preview = document.createElement('img');
         preview.src = product.image;
         area.appendChild(preview);
-        area.querySelector('span:last-child').style.display = 'none';
-        area.querySelector('.material-icons-round').style.display = 'none';
+        document.getElementById('uploadIcon').style.display = 'none';
+        document.getElementById('uploadText').style.display = 'none';
         shopImageData = product.image;
       }
       document.getElementById('shopFieldImage').value = '';
@@ -1167,8 +1167,8 @@
           area.appendChild(preview);
         }
         preview.src = shopImageData;
-        area.querySelector('span:last-child').style.display = 'none';
-        area.querySelector('.material-icons-round').style.display = 'none';
+        document.getElementById('uploadIcon').style.display = 'none';
+        document.getElementById('uploadText').style.display = 'none';
       };
       reader.readAsDataURL(file);
     }
