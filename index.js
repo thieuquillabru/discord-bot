@@ -85,6 +85,12 @@ function handleRequest(req, res) {
 
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
+  // ── Uptime monitor ping (no auth, no rate limit, no timeout) ──
+  if (req.method === 'GET' && url.pathname === '/ping') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+    return res.end(JSON.stringify({ status: 'ok', uptime: Math.floor(process.uptime()), ts: Date.now() }));
+  }
+
   // Rate limiting
   const { allowed, remaining, resetTime } = checkApiRateLimit(req);
   res.setHeader('X-RateLimit-Remaining', remaining);
