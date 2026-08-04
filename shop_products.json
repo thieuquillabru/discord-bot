@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "msemv7iboij4m",
+    "name": "Casque Gaming",
+    "description": "Son surround 7.1, micro rétractable",
+    "price": 45000,
+    "image": "https://i.imgur.com/XYZ1234.jpg",
+    "category": "premium",
+    "stock": 5,
+    "active": true,
+    "createdAt": 1785846449603
+  }
+]
