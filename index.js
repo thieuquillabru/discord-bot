@@ -334,6 +334,20 @@ client.once('ready', async () => {
     }
   }
 
+  // Bio du profil Discord
+  try {
+    const rest = new REST({ version: '10' }).setToken(config.token);
+    await rest.patch('/users/@me', {
+      body: JSON.stringify({
+        bio: 'Bot officiel de la communauté Gamer MG \u2022 Modération, gestion et divertissement. Développé avec soin pour offrir une expérience complète et fiable.',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    console.log('✅ Bio du profil mise à jour');
+  } catch (err) {
+    console.warn('⚠️ Impossible de mettre à jour la bio:', err.message);
+  }
+
   // Presence professionnelle avec rotation
   const presenceList = [
     // ActivityType.Watching = 3
