@@ -3,11 +3,37 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const config = require('./config');
-const { getAllFeatures, toggleFeature, toggleCommand, updateFeatureSettings, FEATURE_DEFINITIONS } = require('./features');
+const { getAllFeatures, toggleFeature, toggleCommand, updateFeatureSettings, FEATURE_DEFINITIONS, _flushSync: flushFeatures, _forceReload: forceReloadFeatures } = require('./features');
 const shopdata = require('./shopdata');
 const orders = require('./orders');
+const db = require('./database');
 
 const API_KEY = process.env.API_KEY || 'gamer-mg-bot-2024';
+
+// ── Rate limiter for HTTP API ────────────────────────────────
+const apiRateLimits = new Map(); // ip → { count, resetTime }
+const API_RATE_LIMIT = 30; // max requests per window
+const API_RATE_WINDOW = 60000; // 1 minute window
+
+function checkApiRateLimit(req) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = apiRateLimits.get(ip);
+  if (!entry || now > entry.resetTime) {
+    entry = { count: 0, resetTime: now + API_RATE_WINDOW };
+    apiRateLimits.set(ip, entry);
+  }
+  entry.count++;
+  return { allowed: entry.count <= API_RATE_LIMIT, remaining: Math.max(0, API_RATE_LIMIT - entry.count), resetTime: entry.resetTime };
+}
+
+// Clean rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of apiRateLimits) {
+    if (now > entry.resetTime) apiRateLimits.delete(ip);
+  }
+}, 120000);
 
 // ── Client Discord ────────────────────────────────────────────────
 const client = new Client({
@@ -19,6 +45,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  rest: { timeout: 15000 },
 });
 
 client.commands = new Collection();
@@ -58,6 +85,24 @@ function handleRequest(req, res) {
 
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
+  // Rate limiting
+  const { allowed, remaining, resetTime } = checkApiRateLimit(req);
+  res.setHeader('X-RateLimit-Remaining', remaining);
+  res.setHeader('X-RateLimit-Reset', new Date(resetTime).toISOString());
+  if (!allowed) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+    return res.end(JSON.stringify({ error: 'Trop de requ\u00eates. R\u00e9essayez dans 60 secondes.' }));
+  }
+
+  // Request timeout (10s)
+  const timeout = setTimeout(() => {
+    if (!res.writableEnded) {
+      res.writeHead(504, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'D\u00e9lai d\u2019attente d\u00e9pass\u00e9' }));
+    }
+  }, 10000);
+  res.on('finish', () => clearTimeout(timeout));
+
   const url = new URL(req.url, `http://${req.headers.host}`);
   const authKey = url.searchParams.get('key') || (req.headers.authorization || '').replace('Bearer ', '');
 
@@ -78,7 +123,14 @@ function handleRequest(req, res) {
 
   function readBody(cb) {
     let body = '';
-    req.on('data', c => (body += c));
+    let size = 0;
+    const MAX_BODY = 10 * 1024 * 1024; // 10MB max
+    req.on('data', c => {
+      size += c.length;
+      if (size > MAX_BODY) { req.destroy(); return; }
+      body += c;
+    });
+    req.on('error', () => { /* destroyed */ });
     req.on('end', () => cb(body));
   }
 
@@ -109,7 +161,7 @@ function handleRequest(req, res) {
     return ok({ features: getAllFeatures() });
   }
 
-  // POST /api/features/toggle  (toggle master)
+  // POST /api/features/toggle
   if (req.method === 'POST' && url.pathname === '/api/features/toggle') {
     if (authKey !== API_KEY) return authErr();
     readBody(body => {
@@ -124,7 +176,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  // POST /api/features/command/toggle  (toggle individual command)
+  // POST /api/features/command/toggle
   if (req.method === 'POST' && url.pathname === '/api/features/command/toggle') {
     if (authKey !== API_KEY) return authErr();
     readBody(body => {
@@ -140,7 +192,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  // POST /api/features/settings  (update feature settings)
+  // POST /api/features/settings
   if (req.method === 'POST' && url.pathname === '/api/features/settings') {
     if (authKey !== API_KEY) return authErr();
     readBody(body => {
@@ -246,12 +298,19 @@ function handleRequest(req, res) {
     return;
   }
 
-  // Default
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'online', bot: client.user?.tag || 'connecting...' }));
+  // Default 404
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Endpoint non trouv\u00e9' }));
 }
 
-http.createServer(handleRequest).listen(PORT, () => console.log(`\U0001f310 HTTP + API :${PORT}`));
+const server = http.createServer(handleRequest);
+
+// Keep-alive timeout to prevent hanging connections
+server.keepAliveTimeout = 30000;
+server.headersTimeout = 10000;
+server.requestTimeout = 30000;
+
+server.listen(PORT, () => console.log(`\U0001f310 HTTP + API :${PORT}`));
 
 // ── Enregistrement slash commands + connexion ─────────────────────
 client.once('ready', async () => {
@@ -271,6 +330,76 @@ client.once('ready', async () => {
 
   client.user.setActivity('/help pour commencer', { type: 'PLAYING' });
 });
+
+// ── Error handling ────────────────────────────────────────────────
+client.on('error', (err) => {
+  console.error('[Discord] Client error:', err.message);
+});
+
+client.on('warn', (warn) => {
+  console.warn('[Discord] Warning:', warn);
+});
+
+// ── Graceful shutdown ─────────────────────────────────────────────
+const SHUTDOWN_TIMEOUT = 10000;
+
+function gracefulShutdown(signal) {
+  console.log(`\n[SHUTDOWN] Signal: ${signal}. Starting graceful shutdown...`);
+
+  // Stop accepting new connections
+  server.close((err) => {
+    if (err) console.error('[SHUTDOWN] HTTP server close error:', err.message);
+    else console.log('[SHUTDOWN] HTTP server closed.');
+  });
+
+  // Set a hard timeout
+  const hardTimeout = setTimeout(() => {
+    console.error('[SHUTDOWN] Forced exit after timeout.');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT);
+
+  // Flush all caches synchronously
+  try {
+    flushFeatures();
+    shopdata._flushSync();
+    orders._flushSync();
+    db._flushAllSync();
+    console.log('[SHUTDOWN] All data flushed to disk.');
+  } catch (err) {
+    console.error('[SHUTDOWN] Flush error:', err.message);
+  }
+
+  // Destroy Discord client
+  client.destroy();
+  console.log('[SHUTDOWN] Discord client destroyed.');
+
+  clearTimeout(hardTimeout);
+  process.exit(0);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  // Try to flush data before exiting
+  try { flushFeatures(); shopdata._flushSync(); orders._flushSync(); db._flushAllSync(); } catch {}
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled rejection:', reason);
+});
+
+// ── Memory monitoring ─────────────────────────────────────────────
+setInterval(() => {
+  const mem = process.memoryUsage();
+  const heapMB = Math.round(mem.heapUsed / 1024 / 1024);
+  const rssMB = Math.round(mem.rss / 1024 / 1024);
+  if (heapMB > 200) {
+    console.warn(`[MEMORY] High heap usage: ${heapMB}MB RSS: ${rssMB}MB`);
+  }
+}, 60000);
 
 client.login(config.token).catch(err => {
   console.error('\u274c Erreur connexion :', err.message);

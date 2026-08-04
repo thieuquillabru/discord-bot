@@ -30,7 +30,9 @@
   },
   "tickets": {
     "enabled": true,
-    "commands": { "ticket": true },
+    "commands": {
+      "ticket": true
+    },
     "settings": {
       "category": "",
       "supportRole": "",

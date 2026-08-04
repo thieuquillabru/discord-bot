@@ -149,20 +149,20 @@ const FEATURE_DEFINITIONS = {
   },
   antiraid: {
     label: 'Anti-Raid',
-    description: 'Protection complète anti-raid : âge compte, avatar, spam, mentions, invitations, raid mode',
+    description: 'Protection compl\u00e8te anti-raid : \u00e2ge compte, avatar, spam, mentions, invitations, raid mode',
     icon: 'security',
     color: '#FF1744',
     commands: ['antiraid'],
     settings: {
       logChannel: { type: 'text', label: 'Salon de logs anti-raid (ID)', default: '' },
-      accountAgeDays: { type: 'number', label: 'Âge minimum du compte (jours, 0 = désactivé)', default: 0, min: 0, max: 365 },
+      accountAgeDays: { type: 'number', label: '\u00c2ge minimum du compte (jours, 0 = d\u00e9sactiv\u00e9)', default: 0, min: 0, max: 365 },
       requireAvatar: { type: 'boolean', label: 'Exiger un avatar (kick si aucun)', default: false },
       maxJoinsCount: { type: 'number', label: 'Max joins avant alerte raid', default: 5, min: 2, max: 100 },
-      maxJoinsWindow: { type: 'number', label: 'Fenêtre de détection joins (secondes)', default: 10, min: 1, max: 120 },
+      maxJoinsWindow: { type: 'number', label: 'Fen\u00eatre de d\u00e9tection joins (secondes)', default: 10, min: 1, max: 120 },
       joinPunishment: { type: 'text', label: 'Punition raid (kick / ban / none)', default: 'kick' },
       antiSpam: { type: 'boolean', label: 'Anti-spam messages', default: true },
       spamMaxMessages: { type: 'number', label: 'Max messages avant spam', default: 8, min: 3, max: 50 },
-      spamWindow: { type: 'number', label: 'Fenêtre spam (secondes)', default: 5, min: 1, max: 60 },
+      spamWindow: { type: 'number', label: 'Fen\u00eatre spam (secondes)', default: 5, min: 1, max: 60 },
       spamPunishment: { type: 'text', label: 'Punition spam (mute / kick / ban)', default: 'mute' },
       antiMention: { type: 'boolean', label: 'Anti-mention spam', default: true },
       maxMentions: { type: 'number', label: 'Max mentions par message', default: 5, min: 2, max: 50 },
@@ -173,24 +173,30 @@ const FEATURE_DEFINITIONS = {
       antiMassEmoji: { type: 'boolean', label: 'Anti-mass emoji', default: true },
       maxEmojiPerMsg: { type: 'number', label: 'Max emoji par message', default: 15, min: 1, max: 100 },
       autoLockChannels: { type: 'boolean', label: 'Verrouiller auto tous les salons pendant raid', default: true },
-      autoUnlockMinutes: { type: 'number', label: 'Auto-déverrouiller après X minutes', default: 10, min: 1, max: 120 },
+      autoUnlockMinutes: { type: 'number', label: 'Auto-d\u00e9verrouiller apr\u00e8s X minutes', default: 10, min: 1, max: 120 },
     },
   },
   shop: {
     label: 'Boutique',
-    description: 'Boutique avec paiement Mobile Money, boutons Acheter, vérification et notifications par email',
+    description: 'Boutique avec paiement Mobile Money, boutons Acheter, v\u00e9rification et notifications par email',
     icon: 'storefront',
     color: '#FF9800',
     commands: ['boutique', 'acheter'],
     settings: {
-      mmNumber: { type: 'text', label: 'Numéro Mobile Money', default: '032 81 381 58' },
+      mmNumber: { type: 'text', label: 'Num\u00e9ro Mobile Money', default: '032 81 381 58' },
       ownerEmail: { type: 'text', label: 'Email pour notifications de paiement', default: 'mathieurambelomanana@gmail.com' },
-      mmOperator: { type: 'text', label: 'Opérateur Mobile Money (Telma / Orange / Airtel)', default: 'Telma' },
+      mmOperator: { type: 'text', label: 'Op\u00e9rateur Mobile Money (Telma / Orange / Airtel)', default: 'Telma' },
     },
   },
 };
 
-function loadFeatures() {
+// ── In-memory cache with write-behind ─────────────────────────────
+let _cache = null;
+let _dirty = false;
+let _saveTimer = null;
+const SAVE_DELAY_MS = 2000;
+
+function _loadFromDisk() {
   try {
     return JSON.parse(fs.readFileSync(FEATURES_FILE, 'utf8'));
   } catch {
@@ -198,6 +204,37 @@ function loadFeatures() {
     fs.writeFileSync(FEATURES_FILE, JSON.stringify(defaults, null, 2));
     return defaults;
   }
+}
+
+function _ensureCache() {
+  if (!_cache) _cache = _loadFromDisk();
+  return _cache;
+}
+
+function _scheduleSave() {
+  if (_dirty) return;
+  _dirty = true;
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    if (!_dirty) return;
+    _dirty = false;
+    try { fs.writeFileSync(FEATURES_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Features save error:', e); }
+  }, SAVE_DELAY_MS);
+}
+
+function _flushSync() {
+  _dirty = false;
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  if (_cache) {
+    try { fs.writeFileSync(FEATURES_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Features flush error:', e); }
+  }
+}
+
+// For external writes that need to be persisted immediately (e.g. shutdown)
+function _forceReload() {
+  _flushSync();
+  _cache = null;
 }
 
 function buildDefaults() {
@@ -214,12 +251,8 @@ function buildDefaults() {
   return defaults;
 }
 
-function saveFeatures(features) {
-  fs.writeFileSync(FEATURES_FILE, JSON.stringify(features, null, 2));
-}
-
 function isFeatureEnabled(featureName) {
-  const features = loadFeatures();
+  const features = _ensureCache();
   return features[featureName]?.enabled !== false;
 }
 
@@ -227,31 +260,31 @@ function isCommandEnabled(commandName) {
   const featureKey = getFeatureForCommand(commandName);
   if (!featureKey) return true;
   if (!isFeatureEnabled(featureKey)) return false;
-  const features = loadFeatures();
+  const features = _ensureCache();
   const cmdState = features[featureKey]?.commands?.[commandName];
   return cmdState !== false;
 }
 
 function toggleFeature(featureName, enabled) {
-  const features = loadFeatures();
+  const features = _ensureCache();
   if (!features[featureName]) return false;
   features[featureName].enabled = enabled;
-  saveFeatures(features);
+  _scheduleSave();
   return true;
 }
 
 function toggleCommand(commandName, enabled) {
   const featureKey = getFeatureForCommand(commandName);
   if (!featureKey) return false;
-  const features = loadFeatures();
+  const features = _ensureCache();
   if (!features[featureKey]?.commands) return false;
   features[featureKey].commands[commandName] = enabled;
-  saveFeatures(features);
+  _scheduleSave();
   return true;
 }
 
 function updateFeatureSettings(featureName, settings) {
-  const features = loadFeatures();
+  const features = _ensureCache();
   if (!features[featureName]) return false;
   const def = FEATURE_DEFINITIONS[featureName];
   if (!def) return false;
@@ -271,12 +304,12 @@ function updateFeatureSettings(featureName, settings) {
       features[featureName].settings[key] = String(val);
     }
   }
-  saveFeatures(features);
+  _scheduleSave();
   return true;
 }
 
 function getFeatureSettings(featureName) {
-  const features = loadFeatures();
+  const features = _ensureCache();
   return features[featureName]?.settings || {};
 }
 
@@ -288,7 +321,7 @@ function getFeatureForCommand(commandName) {
 }
 
 function getAllFeatures() {
-  const states = loadFeatures();
+  const states = _ensureCache();
   const result = {};
   for (const [key, def] of Object.entries(FEATURE_DEFINITIONS)) {
     const state = states[key] || { enabled: true, commands: {}, settings: {} };
@@ -310,7 +343,8 @@ function getAllFeatures() {
 }
 
 module.exports = {
-  FEATURE_DEFINITIONS, loadFeatures, saveFeatures, isFeatureEnabled,
+  FEATURE_DEFINITIONS, isFeatureEnabled,
   isCommandEnabled, toggleFeature, toggleCommand,
   updateFeatureSettings, getFeatureSettings, getFeatureForCommand, getAllFeatures,
+  _flushSync, _forceReload,
 };

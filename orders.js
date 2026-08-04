@@ -3,17 +3,41 @@ const path = require('path');
 
 const ORDERS_FILE = path.join(__dirname, 'orders.json');
 
-function load() {
+// ── In-memory cache with write-behind ─────────────────────────
+let _cache = null;
+let _dirty = false;
+let _saveTimer = null;
+const SAVE_DELAY_MS = 1500;
+
+function _load() {
+  if (_cache) return _cache;
   try {
-    return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8'));
+    _cache = JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8'));
   } catch {
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2));
-    return [];
+    _cache = [];
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(_cache, null, 2));
   }
+  return _cache;
 }
 
-function save(orders) {
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+function _scheduleSave() {
+  if (_dirty) return;
+  _dirty = true;
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    if (!_dirty || !_cache) return;
+    _dirty = false;
+    try { fs.writeFileSync(ORDERS_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Orders save error:', e); }
+  }, SAVE_DELAY_MS);
+}
+
+function _flushSync() {
+  _dirty = false;
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  if (_cache) {
+    try { fs.writeFileSync(ORDERS_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Orders flush error:', e); }
+  }
 }
 
 function generateId() {
@@ -38,7 +62,7 @@ const STATUS_COLORS = {
  * Create a new order from a payment verification
  */
 function create({ productId, productName, productPrice, productImage, userId, username, senderNumber, emailSent, emailTo }) {
-  const orders = load();
+  const orders = _load();
   const order = {
     id: generateId(),
     productId: productId || '',
@@ -55,7 +79,7 @@ function create({ productId, productName, productPrice, productImage, userId, us
     updatedAt: Date.now(),
   };
   orders.unshift(order);
-  save(orders);
+  _scheduleSave();
   return order;
 }
 
@@ -63,7 +87,7 @@ function create({ productId, productName, productPrice, productImage, userId, us
  * Get all orders, optionally filtered by status
  */
 function getAll(filter) {
-  const orders = load();
+  const orders = _load();
   if (filter && filter !== 'all') {
     return orders.filter(o => o.status === filter);
   }
@@ -74,7 +98,7 @@ function getAll(filter) {
  * Get a single order by ID
  */
 function getById(id) {
-  return load().find(o => o.id === id) || null;
+  return _load().find(o => o.id === id) || null;
 }
 
 /**
@@ -82,12 +106,12 @@ function getById(id) {
  */
 function updateStatus(id, newStatus) {
   if (!VALID_STATUSES.includes(newStatus)) return null;
-  const orders = load();
+  const orders = _load();
   const idx = orders.findIndex(o => o.id === id);
   if (idx === -1) return null;
   orders[idx].status = newStatus;
   orders[idx].updatedAt = Date.now();
-  save(orders);
+  _scheduleSave();
   return orders[idx];
 }
 
@@ -95,13 +119,13 @@ function updateStatus(id, newStatus) {
  * Add a note to an order
  */
 function addNote(id, note) {
-  const orders = load();
+  const orders = _load();
   const idx = orders.findIndex(o => o.id === id);
   if (idx === -1) return null;
   if (!orders[idx].notes) orders[idx].notes = [];
   orders[idx].notes.push({ text: note, at: Date.now() });
   orders[idx].updatedAt = Date.now();
-  save(orders);
+  _scheduleSave();
   return orders[idx];
 }
 
@@ -109,11 +133,11 @@ function addNote(id, note) {
  * Delete an order
  */
 function remove(id) {
-  const orders = load();
+  const orders = _load();
   const idx = orders.findIndex(o => o.id === id);
   if (idx === -1) return false;
   orders.splice(idx, 1);
-  save(orders);
+  _scheduleSave();
   return true;
 }
 
@@ -121,7 +145,7 @@ function remove(id) {
  * Get order statistics
  */
 function getStats() {
-  const all = load();
+  const all = _load();
   return {
     total: all.length,
     pending: all.filter(o => o.status === 'pending').length,
@@ -135,4 +159,5 @@ function getStats() {
 module.exports = {
   create, getAll, getById, updateStatus, addNote, remove, getStats,
   VALID_STATUSES, STATUS_LABELS, STATUS_COLORS,
+  _flushSync,
 };

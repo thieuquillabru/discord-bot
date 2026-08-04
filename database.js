@@ -3,112 +3,102 @@ const path = require('path');
 
 const dataDir = path.join(__dirname, 'data');
 
-// Cooldown tracking in memory
-const cooldowns = new Map();
+// ── In-memory file cache with write-behind ──────────────────────
+// Each file is cached: key = filename, value = { data, dirty, timer }
+const fileCache = new Map();
+const SAVE_DELAY_MS = 2000;
 
-// Ensure data directory exists
 function ensureDataDir() {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 }
 
-/**
- * Read and parse JSON from data/{file}.json
- * @param {string} file
- * @returns {Object}
- */
+// ── Cached file read/write ──────────────────────────────────────
+function _getCached(file) {
+  const cached = fileCache.get(file);
+  if (cached) return cached;
+  ensureDataDir();
+  const filePath = path.join(dataDir, file + '.json');
+  let data = {};
+  if (fs.existsSync(filePath)) {
+    try { data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch (e) { console.error(`Error reading ${file}.json:`, e); }
+  }
+  const entry = { data, dirty: false, timer: null };
+  fileCache.set(file, entry);
+  return entry;
+}
+
+function _scheduleWrite(file, entry) {
+  if (entry.dirty) return;
+  entry.dirty = true;
+  if (entry.timer) return;
+  entry.timer = setTimeout(() => {
+    entry.timer = null;
+    if (!entry.dirty) return;
+    entry.dirty = false;
+    ensureDataDir();
+    const filePath = path.join(dataDir, file + '.json');
+    try { fs.writeFileSync(filePath, JSON.stringify(entry.data, null, 2), 'utf8'); } catch (e) { console.error(`Error writing ${file}.json:`, e); }
+  }, SAVE_DELAY_MS);
+}
+
+function _flushAllSync() {
+  for (const [file, entry] of fileCache) {
+    if (!entry.dirty) continue;
+    entry.dirty = false;
+    if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
+    ensureDataDir();
+    const filePath = path.join(dataDir, file + '.json');
+    try { fs.writeFileSync(filePath, JSON.stringify(entry.data, null, 2), 'utf8'); } catch (e) { console.error(`Flush error ${file}.json:`, e); }
+  }
+}
+
+// ── Public API (same as before but cached) ──────────────────────
 function getData(file) {
-  ensureDataDir();
-  const filePath = path.join(dataDir, file + '.json');
-  if (!fs.existsSync(filePath)) return {};
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (e) {
-    console.error(`Error reading ${file}.json:`, e);
-    return {};
-  }
+  return _getCached(file).data;
 }
 
-/**
- * Write JSON to data/{file}.json with pretty print
- * @param {string} file
- * @param {Object} data
- */
 function saveData(file, data) {
-  ensureDataDir();
-  const filePath = path.join(dataDir, file + '.json');
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  const entry = _getCached(file);
+  entry.data = data;
+  _scheduleWrite(file, entry);
 }
 
-/**
- * Get user data, auto-creates with defaults
- * @param {string} file
- * @param {string} guildId
- * @param {string} userId
- * @returns {Object}
- */
 function getUser(file, guildId, userId) {
-  const data = getData(file);
-  if (!data[guildId]) data[guildId] = {};
-  if (!data[guildId][userId]) {
-    data[guildId][userId] = { money: 0, bank: 0, xp: 0, inventory: [], lastDaily: 0, dailyStreak: 0 };
-    saveData(file, data);
+  const entry = _getCached(file);
+  if (!entry.data[guildId]) entry.data[guildId] = {};
+  if (!entry.data[guildId][userId]) {
+    entry.data[guildId][userId] = { money: 0, bank: 0, xp: 0, inventory: [], lastDaily: 0, dailyStreak: 0 };
+    _scheduleWrite(file, entry);
   }
-  return data[guildId][userId];
+  return entry.data[guildId][userId];
 }
 
-/**
- * Set user data
- * @param {string} file
- * @param {string} guildId
- * @param {string} userId
- * @param {Object} userData
- */
 function setUser(file, guildId, userId, userData) {
-  const data = getData(file);
-  if (!data[guildId]) data[guildId] = {};
-  data[guildId][userId] = userData;
-  saveData(file, data);
+  const entry = _getCached(file);
+  if (!entry.data[guildId]) entry.data[guildId] = {};
+  entry.data[guildId][userId] = userData;
+  _scheduleWrite(file, entry);
 }
 
-/**
- * Get guild data, auto-creates
- * @param {string} file
- * @param {string} guildId
- * @returns {Object}
- */
 function getGuild(file, guildId) {
-  const data = getData(file);
-  if (!data[guildId]) {
-    data[guildId] = {};
-    saveData(file, data);
+  const entry = _getCached(file);
+  if (!entry.data[guildId]) {
+    entry.data[guildId] = {};
+    _scheduleWrite(file, entry);
   }
-  return data[guildId];
+  return entry.data[guildId];
 }
 
-/**
- * Set guild data
- * @param {string} file
- * @param {string} guildId
- * @param {Object} guildData
- */
 function setGuild(file, guildId, guildData) {
-  const data = getData(file);
-  data[guildId] = guildData;
-  saveData(file, data);
+  const entry = _getCached(file);
+  entry.data[guildId] = guildData;
+  _scheduleWrite(file, entry);
 }
 
-/**
- * Get top users by a numeric key
- * @param {string} file
- * @param {string} guildId
- * @param {string} key
- * @param {number} limit
- * @returns {Array<{userId, value}>}
- */
 function getTop(file, guildId, key, limit = 10) {
-  const data = getData(file);
+  const data = _getCached(file).data;
   const guildData = data[guildId] || {};
   const entries = [];
   for (const [userId, userData] of Object.entries(guildData)) {
@@ -197,26 +187,25 @@ function getXPForLevel(level) {
   return level * level * 100;
 }
 
-// ─── Cooldown tracking ─────────────────────────────────────────────
+// ─── Cooldown tracking with periodic cleanup ──────────────────────
+const cooldowns = new Map();
+let _cooldownCleanupTimer = null;
 
-/**
- * Check if user is on cooldown for an action
- * @param {string} guildId
- * @param {string} userId
- * @param {string} action
- * @param {number} cooldownMs
- * @returns {boolean} true if on cooldown, false if ready
- */
+function _startCooldownCleanup() {
+  if (_cooldownCleanupTimer) return;
+  _cooldownCleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of cooldowns) {
+      // Remove entries older than 10 minutes
+      if (now - v > 600000) cooldowns.delete(k);
+    }
+  }, 60000); // Clean every minute
+}
+
 function checkCooldown(guildId, userId, action, cooldownMs) {
+  _startCooldownCleanup();
   const key = `${guildId}:${userId}:${action}`;
   const now = Date.now();
-
-  // Auto-cleanup expired cooldowns periodically
-  if (cooldowns.size > 10000) {
-    for (const [k, v] of cooldowns) {
-      if (now - v > cooldownMs * 2) cooldowns.delete(k);
-    }
-  }
 
   const lastUsed = cooldowns.get(key);
   if (lastUsed && now - lastUsed < cooldownMs) {
@@ -227,14 +216,6 @@ function checkCooldown(guildId, userId, action, cooldownMs) {
   return false;
 }
 
-/**
- * Get remaining cooldown time in ms
- * @param {string} guildId
- * @param {string} userId
- * @param {string} action
- * @param {number} cooldownMs
- * @returns {number} remaining ms, 0 if not on cooldown
- */
 function getRemainingCooldown(guildId, userId, action, cooldownMs) {
   const key = `${guildId}:${userId}:${action}`;
   const now = Date.now();
@@ -259,11 +240,6 @@ const DEFAULT_SHOP_ITEMS = [
   { id: 10, name: 'Sceptre divin', emoji: '🌟', price: 10000, type: 'weapon', rarity: 'legendary', description: 'Un sceptre d\'une puissance divine inégalée.' },
 ];
 
-/**
- * Ensure shop exists for a guild, initialize with defaults if not
- * @param {string} guildId
- * @returns {Array}
- */
 function ensureShop(guildId) {
   const shopData = getData('shop');
   if (!shopData[guildId]) {
@@ -274,27 +250,11 @@ function ensureShop(guildId) {
 }
 
 module.exports = {
-  getData,
-  saveData,
-  getUser,
-  setUser,
-  getGuild,
-  setGuild,
-  getTop,
-  addMoney,
-  getMoney,
-  setMoney,
-  addBank,
-  getBank,
-  addToInventory,
-  getInventory,
-  removeFromInventory,
-  addXP,
-  getXP,
-  getLevel,
-  getXPForLevel,
-  checkCooldown,
-  getRemainingCooldown,
-  DEFAULT_SHOP_ITEMS,
-  ensureShop,
+  getData, saveData, getUser, setUser, getGuild, setGuild, getTop,
+  addMoney, getMoney, setMoney, addBank, getBank,
+  addToInventory, getInventory, removeFromInventory,
+  addXP, getXP, getLevel, getXPForLevel,
+  checkCooldown, getRemainingCooldown,
+  DEFAULT_SHOP_ITEMS, ensureShop,
+  _flushAllSync,
 };

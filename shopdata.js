@@ -3,18 +3,41 @@ const path = require('path');
 
 const SHOP_FILE = path.join(__dirname, 'shop_products.json');
 
-function load() {
+// ── In-memory cache with write-behind ─────────────────────────
+let _cache = null;
+let _dirty = false;
+let _saveTimer = null;
+const SAVE_DELAY_MS = 1500;
+
+function _load() {
+  if (_cache) return _cache;
   try {
-    return JSON.parse(fs.readFileSync(SHOP_FILE, 'utf8'));
+    _cache = JSON.parse(fs.readFileSync(SHOP_FILE, 'utf8'));
   } catch {
-    const empty = [];
-    fs.writeFileSync(SHOP_FILE, JSON.stringify(empty, null, 2));
-    return empty;
+    _cache = [];
+    fs.writeFileSync(SHOP_FILE, JSON.stringify(_cache, null, 2));
   }
+  return _cache;
 }
 
-function save(products) {
-  fs.writeFileSync(SHOP_FILE, JSON.stringify(products, null, 2));
+function _scheduleSave() {
+  if (_dirty) return;
+  _dirty = true;
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    if (!_dirty || !_cache) return;
+    _dirty = false;
+    try { fs.writeFileSync(SHOP_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Shop save error:', e); }
+  }, SAVE_DELAY_MS);
+}
+
+function _flushSync() {
+  _dirty = false;
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  if (_cache) {
+    try { fs.writeFileSync(SHOP_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Shop flush error:', e); }
+  }
 }
 
 function generateId() {
@@ -22,19 +45,19 @@ function generateId() {
 }
 
 function getAll() {
-  return load();
+  return [..._load()]; // return copy to prevent mutation
 }
 
 function getActive() {
-  return load().filter(p => p.active !== false);
+  return _load().filter(p => p.active !== false);
 }
 
 function getById(id) {
-  return load().find(p => p.id === id) || null;
+  return _load().find(p => p.id === id) || null;
 }
 
 function add(product) {
-  const products = load();
+  const products = _load();
   const newProduct = {
     id: generateId(),
     name: product.name || 'Sans nom',
@@ -47,12 +70,12 @@ function add(product) {
     createdAt: Date.now(),
   };
   products.push(newProduct);
-  save(products);
+  _scheduleSave();
   return newProduct;
 }
 
 function update(id, updates) {
-  const products = load();
+  const products = _load();
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return null;
   const allowed = ['name', 'description', 'price', 'image', 'category', 'stock', 'active'];
@@ -65,21 +88,21 @@ function update(id, updates) {
     }
   }
   products[idx].updatedAt = Date.now();
-  save(products);
+  _scheduleSave();
   return products[idx];
 }
 
 function remove(id) {
-  const products = load();
+  const products = _load();
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return false;
   products.splice(idx, 1);
-  save(products);
+  _scheduleSave();
   return true;
 }
 
 function reorder(ids) {
-  const products = load();
+  const products = _load();
   const reordered = [];
   for (const id of ids) {
     const p = products.find(pr => pr.id === id);
@@ -87,12 +110,13 @@ function reorder(ids) {
   }
   const remaining = products.filter(p => !ids.includes(p.id));
   const result = [...reordered, ...remaining];
-  save(result);
+  _cache = result;
+  _scheduleSave();
   return result;
 }
 
 function getStats() {
-  const all = load();
+  const all = _load();
   const active = all.filter(p => p.active !== false);
   return {
     total: all.length,
@@ -102,4 +126,4 @@ function getStats() {
   };
 }
 
-module.exports = { getAll, getActive, getById, add, update, remove, reorder, getStats };
+module.exports = { getAll, getActive, getById, add, update, remove, reorder, getStats, _flushSync };

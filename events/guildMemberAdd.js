@@ -52,7 +52,7 @@ module.exports = {
     if (ws.dmEnabled) {
       try {
         await member.send({ embeds: [embed] });
-      } catch {}
+      } catch (e) { /* DM disabled */ }
     }
   },
 };
