@@ -337,11 +337,10 @@ client.once('ready', async () => {
   // Bio du profil Discord
   try {
     const rest = new REST({ version: '10' }).setToken(config.token);
-    await rest.patch('/users/@me', {
-      body: JSON.stringify({
+    await rest.patch(Routes.user('@me'), {
+      body: {
         bio: 'Bot officiel de la communauté Malagasy FORGOTTEN LAND \u2022 Modération, gestion et divertissement. Développé avec soin pour offrir une expérience complète et fiable.',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
     console.log('✅ Bio du profil mise à jour');
   } catch (err) {
