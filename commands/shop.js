@@ -89,11 +89,40 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setColor(config.colors.error)
-            .setTitle('❌ Erreur')
+            .setTitle('\u274c Erreur')
             .setDescription('Une erreur est survenue lors de l\'affichage du magasin.')
             .setTimestamp(),
         ],
       });
     }
+  },
+
+  buildPage(guildId, page) {
+    const itemsPerPage = 8;
+    const shopItems = db.ensureShop(guildId);
+    const totalPages = Math.max(1, Math.ceil(shopItems.length / itemsPerPage));
+    const p = Math.min(Math.max(1, page), totalPages);
+    const start = (p - 1) * itemsPerPage;
+    const pageItems = shopItems.slice(start, start + itemsPerPage);
+
+    const embed = new EmbedBuilder()
+      .setColor(config.colors.embed)
+      .setTitle('\uD83C\uDFEA Magasin')
+      .setDescription('Utilise \\`/buy <id>\\` pour acheter un objet.\nPage **' + p + '/' + totalPages + '**')
+      .setTimestamp();
+
+    for (const item of pageItems) {
+      embed.addFields({
+        name: item.emoji + ' #' + item.id + ' ' + item.name,
+        value: '**' + item.price.toLocaleString('fr-FR') + '** coins | ' + (RARITY_LABELS[item.rarity] || item.rarity) + ' | ' + item.description,
+        inline: false,
+      });
+    }
+
+    const row = new ActionRowBuilder();
+    if (p > 1) row.addComponents(new ButtonBuilder().setCustomId('shop_prev_' + p).setLabel('\u25C0 Pr\u00e9c\u00e9dent').setStyle(ButtonStyle.Primary));
+    if (p < totalPages) row.addComponents(new ButtonBuilder().setCustomId('shop_next_' + p).setLabel('Suivant \u25B6').setStyle(ButtonStyle.Primary));
+
+    return { embed, row };
   },
 };

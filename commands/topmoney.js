@@ -91,11 +91,47 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setColor(config.colors.error)
-            .setTitle('❌ Erreur')
+            .setTitle('\u274c Erreur')
             .setDescription('Une erreur est survenue lors de l\'affichage du classement.')
             .setTimestamp(),
         ],
       });
     }
+  },
+
+  async buildPage(guildId, page, guild) {
+    const perPage = 10;
+    const allEntries = db.getTop('economy', guildId, 'money', 1000);
+    const totalPages = Math.max(1, Math.ceil(allEntries.length / perPage));
+    const p = Math.min(Math.max(1, page), totalPages);
+    const start = (p - 1) * perPage;
+    const pageEntries = allEntries.slice(start, start + perPage);
+    const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+    let description = '';
+
+    for (let i = 0; i < pageEntries.length; i++) {
+      const entry = pageEntries[i];
+      const rank = start + i + 1;
+      const medal = rank <= 3 ? medals[rank - 1] : '**' + rank + '.**';
+      try {
+        const member = await guild.members.fetch(entry.userId);
+        description += medal + ' <@' + entry.userId + '> \u2014 **' + entry.value.toLocaleString('fr-FR') + '** \uD83E\uDE99\n';
+      } catch {
+        description += '**' + rank + '.** Utilisateur inconnu \u2014 **' + entry.value.toLocaleString('fr-FR') + '** \uD83E\uDE99\n';
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(config.colors.embed)
+      .setTitle('\uD83C\uDFC6 Classement des plus riches')
+      .setDescription(description)
+      .setFooter({ text: 'Page ' + p + '/' + totalPages + ' \u2022 ' + allEntries.length + ' joueur' + (allEntries.length > 1 ? 's' : '') })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder();
+    if (p > 1) row.addComponents(new ButtonBuilder().setCustomId('topmoney_prev_' + p).setLabel('\u25C0 Pr\u00e9c\u00e9dent').setStyle(ButtonStyle.Primary));
+    if (p < totalPages) row.addComponents(new ButtonBuilder().setCustomId('topmoney_next_' + p).setLabel('Suivant \u25B6').setStyle(ButtonStyle.Primary));
+
+    return { embed, row };
   },
 };

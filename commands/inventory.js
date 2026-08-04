@@ -118,11 +118,45 @@ Utilise \`/item <index> <action>\` pour interagir avec un objet.`)
         embeds: [
           new EmbedBuilder()
             .setColor(config.colors.error)
-            .setTitle('❌ Erreur')
+            .setTitle('\u274c Erreur')
             .setDescription('Une erreur est survenue lors de l\'affichage de l\'inventaire.')
             .setTimestamp(),
         ],
       });
     }
+  },
+
+  buildPage(guildId, userId, page, username) {
+    const itemsPerPage = 6;
+    const inventory = db.getInventory(guildId, userId);
+    const totalPages = Math.max(1, Math.ceil(inventory.length / itemsPerPage));
+    const p = Math.min(Math.max(1, page), totalPages);
+    const start = (p - 1) * itemsPerPage;
+    const pageItems = inventory.slice(start, start + itemsPerPage);
+    const displayName = username || 'Inconnu';
+
+    const embed = new EmbedBuilder()
+      .setColor(config.colors.embed)
+      .setTitle('\uD83D\uDCBD Inventaire de ' + displayName)
+      .setDescription('**' + inventory.length + '** objet' + (inventory.length > 1 ? 's' : '') + ' \u2022 Page **' + p + '/' + totalPages + '**\nUtilise \`/item <index> <action>\` pour interagir.')
+      .setTimestamp();
+
+    for (let i = 0; i < pageItems.length; i++) {
+      const item = pageItems[i];
+      const globalIndex = start + i;
+      const typeLabel = TYPE_LABELS[item.type] || item.type;
+      const rarityLabel = RARITY_LABELS[item.rarity] || item.rarity;
+      embed.addFields({
+        name: item.emoji + ' [' + globalIndex + '] ' + item.name,
+        value: '**' + typeLabel + '** | ' + rarityLabel + ' | Prix: ' + (item.price ? item.price.toLocaleString('fr-FR') + ' coins' : 'N/A'),
+        inline: false,
+      });
+    }
+
+    const row = new ActionRowBuilder();
+    if (p > 1) row.addComponents(new ButtonBuilder().setCustomId('inv_prev_' + p + '_' + userId).setLabel('\u25C0 Pr\u00e9c\u00e9dent').setStyle(ButtonStyle.Primary));
+    if (p < totalPages) row.addComponents(new ButtonBuilder().setCustomId('inv_next_' + p + '_' + userId).setLabel('Suivant \u25B6').setStyle(ButtonStyle.Primary));
+
+    return { embed, row };
   },
 };

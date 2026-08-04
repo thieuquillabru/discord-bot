@@ -1109,7 +1109,7 @@
           '<div class="shop-card-info">' +
           '<div class="shop-card-name">' + escHtml(p.name || 'Sans nom') + '</div>' +
           (p.description ? '<div class="shop-card-desc">' + escHtml(p.description) + '</div>' : '') +
-          '<div class="shop-card-meta"><span class="shop-card-price">' + (p.price ?? 0) + ' <span style="font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-muted)">CREDITS</span></span>' +
+          '<div class="shop-card-meta"><span class="shop-card-price">' + (p.price ?? 0).toLocaleString('fr-FR') + ' <span style="font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-muted)">Ar</span></span>' +
           '<span class="shop-card-category">' + escHtml(p.category || 'Général').toUpperCase() + '</span></div></div>' +
           '<div class="shop-card-actions">' +
           '<button onclick="openProductForm(shopProducts[' + products.indexOf(p) + '])"><span class="material-icons-round">edit</span> ÉDITER</button>' +

@@ -185,20 +185,23 @@ module.exports = {
       try {
         const inv = require('../commands/inventory');
         const parts = customId.split('_');
-        const userId = parts[2];
-        const page = parts[0] === 'inv_prev' ? parseInt(parts[3]) - 1 : parseInt(parts[3]) + 1;
-        const { embed, row } = inv.buildPage(guild.id, userId, page);
+        const pageStr = parts[2];
+        const userId = parts[3];
+        const page = parts[0] === 'inv_prev' ? parseInt(pageStr) - 1 : parseInt(pageStr) + 1;
+        const target = await guild.members.fetch(userId).catch(() => null);
+        const username = target ? target.user.username : 'Inconnu';
+        const { embed, row } = inv.buildPage(guild.id, userId, page, username);
         await interaction.update({ embeds: [embed], components: [row] });
       } catch (e) { console.error('Inv page:', e); }
       return;
     }
 
     // ── TopMoney Pagination ──────────────────────────────────────────
-    if (customId.startsWith('top_prev_') || customId.startsWith('top_next_')) {
+    if (customId.startsWith('topmoney_prev_') || customId.startsWith('topmoney_next_')) {
       try {
         const tm = require('../commands/topmoney');
-        const page = customId.startsWith('top_prev_') ? parseInt(customId.split('_')[2]) - 1 : parseInt(customId.split('_')[2]) + 1;
-        const { embed, row } = tm.buildPage(guild.id, page);
+        const page = customId.startsWith('topmoney_prev_') ? parseInt(customId.split('_')[2]) - 1 : parseInt(customId.split('_')[2]) + 1;
+        const { embed, row } = await tm.buildPage(guild.id, page, guild);
         await interaction.update({ embeds: [embed], components: [row] });
       } catch (e) { console.error('TopMoney page:', e); }
       return;
