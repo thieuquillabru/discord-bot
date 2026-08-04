@@ -86,7 +86,7 @@ function handleRequest(req, res) {
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
   // ── Uptime monitor ping (no auth, no rate limit, no timeout) ──
-  if (req.method === 'GET' && url.pathname === '/ping') {
+  if (req.method === 'GET' && req.url === '/ping') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
     return res.end(JSON.stringify({ status: 'ok', uptime: Math.floor(process.uptime()), ts: Date.now() }));
   }
@@ -109,7 +109,7 @@ function handleRequest(req, res) {
   }, 10000);
   res.on('finish', () => clearTimeout(timeout));
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const authKey = url.searchParams.get('key') || (req.headers.authorization || '').replace('Bearer ', '');
 
   function authErr() {
@@ -300,7 +300,7 @@ function handleRequest(req, res) {
     if (authKey !== API_KEY) return authErr();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, message: 'Red\u00e9marrage...' }));
-    setTimeout(() => process.exit(0), 500);
+    setTimeout(() => gracefulShutdown('API_RESTART'), 500);
     return;
   }
 

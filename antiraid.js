@@ -9,6 +9,22 @@ let raidMode = new Map();          // guildId → boolean
 let whitelistedUsers = new Map(); // guildId → Set<userId>
 let whitelistedRoles = new Map(); // guildId → Set<roleId>
 
+// Periodic cleanup to prevent unbounded growth
+setInterval(() => {
+  const now = Date.now();
+  const maxAge = 600000; // 10 minutes
+  for (const [key, msgs] of messageTracker) {
+    const filtered = msgs.filter(m => now - m.timestamp < maxAge);
+    if (filtered.length === 0) messageTracker.delete(key);
+    else if (filtered.length < msgs.length) messageTracker.set(key, filtered);
+  }
+  for (const [gId, joins] of joinTracker) {
+    const filtered = joins.filter(j => now - j.timestamp < maxAge);
+    if (filtered.length === 0) joinTracker.delete(gId);
+    else if (filtered.length < joins.length) joinTracker.set(gId, filtered);
+  }
+}, 120000);
+
 function getSettings(guildId) {
   return getFeatureSettings('antiraid');
 }

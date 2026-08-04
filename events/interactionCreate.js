@@ -4,6 +4,14 @@ const {
 const config = require('../config');
 const { isFeatureEnabled, isCommandEnabled, getFeatureForCommand, FEATURE_DEFINITIONS } = require('../features');
 
+// Fallback reply to prevent "application did not respond" on button errors
+async function safeReply(interaction, content) {
+  try {
+    if (interaction.replied || interaction.deferred) await interaction.followUp({ content, ephemeral: true });
+    else await interaction.reply({ content, ephemeral: true });
+  } catch {}
+}
+
 module.exports = {
   name: 'interactionCreate',
   once: false,
@@ -24,8 +32,12 @@ module.exports = {
       // Universal wrapper: supports both old (message-style) and new (interaction-style) commands
       const msg = {
         _interaction: interaction,
+        id: interaction.id,
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
         author: interaction.user,
         user: interaction.user,
+        userId: interaction.user.id,
         member: interaction.member,
         guild: interaction.guild,
         channel: interaction.channel,
@@ -34,6 +46,7 @@ module.exports = {
         replied: interaction.replied,
         deferred: interaction.deferred,
         options: interaction.options,
+        content: '',
         mentions: {
           users: { first: () => interaction.options.getUser('membre') || interaction.options.getUser('user') },
           members: { first: () => { const u = interaction.options.getUser('membre') || interaction.options.getUser('user'); return u ? interaction.guild?.members.cache.get(u.id) : null; } },
@@ -94,13 +107,13 @@ module.exports = {
           const productId = customId.replace('buy_', '');
           await payments.showPaymentInfo(interaction, productId, client);
         }
-      } catch (e) { console.error('Buy btn:', e); }
+      } catch (e) { console.error('Buy btn:', e); await safeReply(interaction, '\u274c Erreur lors de l\'achat.'); }
       return;
     }
 
     if (customId.startsWith('boutique_')) {
       if (!isFeatureEnabled('shop')) return interaction.reply({ content: '❌ Boutique désactivée.', ephemeral: true });
-      try { const b = require('../commands/boutique'); if (b.handleButton) await b.handleButton(interaction, client); } catch (e) { console.error('Boutique btn:', e); }
+      try { const b = require('../commands/boutique'); if (b.handleButton) await b.handleButton(interaction, client); } catch (e) { console.error('Boutique btn:', e); await safeReply(interaction, '\u274c Erreur boutique.'); }
       return;
     }
 
@@ -147,7 +160,7 @@ module.exports = {
         dm.activeDrops.delete(id);
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('dropclaim_done').setLabel('✅ Réclamé').setStyle(ButtonStyle.Success).setDisabled(true));
         await interaction.update({ content: `💰 **${user.username}** a réclamé **${drop.amount}** pièces !`, components: [row] });
-      } catch (e) { console.error('Drop claim:', e); }
+      } catch (e) { console.error('Drop claim:', e); await safeReply(interaction, '\u274c Erreur réclamation.'); }
       return;
     }
 
@@ -165,7 +178,7 @@ module.exports = {
         dx.activeDrops?.delete(id);
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('dropxp_done').setLabel('✅ Réclamé').setStyle(ButtonStyle.Success).setDisabled(true));
         await interaction.update({ content: `⭐ **${user.username}** a gagné **${drop.amount} XP** !`, components: [row] });
-      } catch (e) { console.error('Drop XP:', e); }
+      } catch (e) { console.error('Drop XP:', e); await safeReply(interaction, '\u274c Erreur drop XP.'); }
       return;
     }
 
@@ -176,7 +189,7 @@ module.exports = {
         const page = customId.startsWith('shop_prev_') ? parseInt(customId.split('_')[2]) - 1 : parseInt(customId.split('_')[2]) + 1;
         const { embed, row } = shop.buildPage(guild.id, page);
         await interaction.update({ embeds: [embed], components: [row] });
-      } catch (e) { console.error('Shop page:', e); }
+      } catch (e) { console.error('Shop page:', e); await safeReply(interaction, '\u274c Erreur page magasin.'); }
       return;
     }
 
@@ -192,7 +205,7 @@ module.exports = {
         const username = target ? target.user.username : 'Inconnu';
         const { embed, row } = inv.buildPage(guild.id, userId, page, username);
         await interaction.update({ embeds: [embed], components: [row] });
-      } catch (e) { console.error('Inv page:', e); }
+      } catch (e) { console.error('Inv page:', e); await safeReply(interaction, '\u274c Erreur page inventaire.'); }
       return;
     }
 
@@ -203,7 +216,7 @@ module.exports = {
         const page = customId.startsWith('topmoney_prev_') ? parseInt(customId.split('_')[2]) - 1 : parseInt(customId.split('_')[2]) + 1;
         const { embed, row } = await tm.buildPage(guild.id, page, guild);
         await interaction.update({ embeds: [embed], components: [row] });
-      } catch (e) { console.error('TopMoney page:', e); }
+      } catch (e) { console.error('TopMoney page:', e); await safeReply(interaction, '\u274c Erreur page classement.'); }
       return;
     }
 
@@ -223,7 +236,7 @@ module.exports = {
         const prefix = Object.keys(modMap).find(p => customId.startsWith(p));
         const cmd = require('../commands/' + modMap[prefix]);
         if (cmd.handleButton) await cmd.handleButton(interaction, client);
-      } catch (e) { console.error('Game button:', e); }
+      } catch (e) { console.error('Game button:', e); await safeReply(interaction, '\u274c Erreur jeu.'); }
       return;
     }
 

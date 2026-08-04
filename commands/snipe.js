@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
-// Stockage des derniers messages supprimés par canal
+// Stockage des derniers messages supprimés par canal (1 par canal, auto-nettoyé 60s)
 const deletedMessages = new Map();
 
 module.exports = {

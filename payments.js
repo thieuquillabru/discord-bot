@@ -4,7 +4,17 @@ const orders = require('./orders');
 const { getFeatureSettings } = require('./features');
 
 // In-memory pending payments (productId -> { user, product, timestamp })
+// Entries expire after 10 minutes
 const pendingPayments = new Map();
+const PAYMENT_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Periodic cleanup of expired pending payments
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of pendingPayments) {
+    if (now - val.timestamp > PAYMENT_TTL_MS) pendingPayments.delete(key);
+  }
+}, 60000);
 
 /**
  * Send email notification via Formsubmit.co (free, no SMTP needed)
@@ -106,7 +116,13 @@ async function showVerifyModal(interaction, productId) {
   const key = `${interaction.user.id}_${productId}`;
   const pending = pendingPayments.get(key);
   if (!pending) {
-    return interaction.reply({ content: "\u274c Aucun achat en cours. Clique d'abord sur \"Acheter\".", ephemeral: true });
+    return interaction.reply({ content: '\u274c Aucun achat en cours. Clique d\'abord sur \"Acheter\".', ephemeral: true });
+  }
+
+  // Check TTL
+  if (Date.now() - pending.timestamp > PAYMENT_TTL_MS) {
+    pendingPayments.delete(key);
+    return interaction.reply({ content: '\u274c Session expirée (10 min). Refais un achat.', ephemeral: true });
   }
 
   const modal = new ModalBuilder()
