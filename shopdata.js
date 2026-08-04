@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { scheduleSync: _scheduleGithubSync, flushSync: _flushGithubSync } = require('./githubSync');
 
 const SHOP_FILE = path.join(__dirname, 'shop_products.json');
 
@@ -28,7 +29,11 @@ function _scheduleSave() {
     _saveTimer = null;
     if (!_dirty || !_cache) return;
     _dirty = false;
-    try { fs.writeFileSync(SHOP_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Shop save error:', e); }
+    try {
+      const json = JSON.stringify(_cache, null, 2);
+      fs.writeFileSync(SHOP_FILE, json);
+      _scheduleGithubSync(SHOP_FILE, 'shop_products.json', 'shop: auto-sync product update');
+    } catch (e) { console.error('Shop save error:', e); }
   }, SAVE_DELAY_MS);
 }
 
@@ -36,7 +41,11 @@ function _flushSync() {
   _dirty = false;
   if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
   if (_cache) {
-    try { fs.writeFileSync(SHOP_FILE, JSON.stringify(_cache, null, 2)); } catch (e) { console.error('Shop flush error:', e); }
+    try {
+      const json = JSON.stringify(_cache, null, 2);
+      fs.writeFileSync(SHOP_FILE, json);
+      _flushGithubSync(SHOP_FILE, 'shop_products.json', 'shop: flush products on shutdown').catch(() => {});
+    } catch (e) { console.error('Shop flush error:', e); }
   }
 }
 
