@@ -176,6 +176,18 @@ const FEATURE_DEFINITIONS = {
       autoUnlockMinutes: { type: 'number', label: 'Auto-déverrouiller après X minutes', default: 10, min: 1, max: 120 },
     },
   },
+  shop: {
+    label: 'Boutique',
+    description: 'Boutique avec paiement Mobile Money, boutons Acheter, vérification et notifications par email',
+    icon: 'storefront',
+    color: '#FF9800',
+    commands: ['boutique', 'acheter'],
+    settings: {
+      mmNumber: { type: 'text', label: 'Numéro Mobile Money', default: '032 81 381 58' },
+      ownerEmail: { type: 'text', label: 'Email pour notifications de paiement', default: 'mathieurambelomanana@gmail.com' },
+      mmOperator: { type: 'text', label: 'Opérateur Mobile Money (Telma / Orange / Airtel)', default: 'Telma' },
+    },
+  },
 };
 
 function loadFeatures() {

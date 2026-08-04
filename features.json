@@ -208,5 +208,17 @@
       "autoLockChannels": true,
       "autoUnlockMinutes": 10
     }
+  },
+  "shop": {
+    "enabled": true,
+    "commands": {
+      "boutique": true,
+      "acheter": true
+    },
+    "settings": {
+      "mmNumber": "032 81 381 58",
+      "ownerEmail": "mathieurambelomanana@gmail.com",
+      "mmOperator": "Telma"
+    }
   }
 }

@@ -59,6 +59,16 @@ module.exports = {
       return;
     }
 
+    // ── Modals ───────────────────────────────────────────────────
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId.startsWith('buy_modal_')) {
+        const productId = interaction.customId.replace('buy_modal_', '');
+        const payments = require('../payments');
+        await payments.handleModalSubmit(interaction, productId);
+      }
+      return;
+    }
+
     if (!interaction.isButton()) return;
     const { customId, user, guild } = interaction;
 
@@ -70,8 +80,26 @@ module.exports = {
     if (customId.startsWith('ms_') && !isFeatureEnabled('games')) return interaction.reply({ content: '❌ Jeux désactivés.', ephemeral: true });
     if (customId.startsWith('c4_') && !isFeatureEnabled('games')) return interaction.reply({ content: '❌ Jeux désactivés.', ephemeral: true });
     if (customId.startsWith('gw_join_') && !isFeatureEnabled('social')) return interaction.reply({ content: '❌ Social désactivé.', ephemeral: true });
+    if (customId.startsWith('buy_')) {
+      if (!isFeatureEnabled('shop')) return interaction.reply({ content: '❌ Boutique désactivée.', ephemeral: true });
+      try {
+        const payments = require('../payments');
+        if (customId.startsWith('buy_verify_')) {
+          const productId = customId.replace('buy_verify_', '');
+          await payments.showVerifyModal(interaction, productId);
+        } else if (customId.startsWith('buy_cancel_')) {
+          const productId = customId.replace('buy_cancel_', '');
+          await payments.handleCancel(interaction, productId);
+        } else {
+          const productId = customId.replace('buy_', '');
+          await payments.showPaymentInfo(interaction, productId, client);
+        }
+      } catch (e) { console.error('Buy btn:', e); }
+      return;
+    }
+
     if (customId.startsWith('boutique_')) {
-      if (!isFeatureEnabled('economy')) return interaction.reply({ content: '❌ Boutique désactivée.', ephemeral: true });
+      if (!isFeatureEnabled('shop')) return interaction.reply({ content: '❌ Boutique désactivée.', ephemeral: true });
       try { const b = require('../commands/boutique'); if (b.handleButton) await b.handleButton(interaction, client); } catch (e) { console.error('Boutique btn:', e); }
       return;
     }
