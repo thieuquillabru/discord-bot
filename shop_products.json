@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "msemwkcvbwon3",
+    "name": "Clavier Mécanique RGB",
+    "description": "Switches Cherry MX Blue, rétroéclairage personnalisable",
+    "price": 35000,
+    "image": "https://i.imgur.com/8kz3pF2.jpeg",
+    "category": "premium",
+    "stock": 10,
+    "active": true,
+    "createdAt": 1785846512911
+  }
+]
