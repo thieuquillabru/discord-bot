@@ -97,7 +97,7 @@ module.exports = {
       buyRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`buy_${prod.id}`)
-          .setLabel(label.length > 80 ? label.slice(0, 77) + '...') : label)
+          .setLabel(label.length > 80 ? label.slice(0, 77) + '...' : label)
           .setStyle(ButtonStyle.Success)
           .setEmoji('\uD83D\uDCB3')
       );
@@ -163,7 +163,7 @@ module.exports = {
         buyRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`buy_${prod.id}`)
-            .setLabel(label.length > 80 ? label.slice(0, 77) + '...') : label)
+            .setLabel(label.length > 80 ? label.slice(0, 77) + '...' : label)
             .setStyle(ButtonStyle.Success)
             .setEmoji('\uD83D\uDCB3')
         );
