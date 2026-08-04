@@ -1,12 +1,19 @@
 const config = require('../config');
 const { isFeatureEnabled } = require('../features');
 const db = require('../database');
+const antiRaid = require('../antiraid');
 
 module.exports = {
   name: 'messageCreate',
   once: false,
   async execute(message, client) {
     if (message.author.bot || !message.guild) return;
+
+    // ── Anti-Raid checks (spam, mentions, invites, etc.) ─────
+    if (isFeatureEnabled('antiraid')) {
+      const blocked = await antiRaid.handleMessage(message);
+      if (blocked) return;
+    }
 
     // ── XP automatique (15-25 XP par message, cooldown 60s) ─────
     if (isFeatureEnabled('levels')) {
@@ -30,7 +37,7 @@ module.exports = {
       const authorPerms = message.member.permissions.has(command.permissions);
       if (!authorPerms) {
         return message.reply({
-          content: '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
+          content: 'Tu n\'as pas la permission d\'utiliser cette commande.',
           ephemeral: false,
         });
       }
@@ -40,7 +47,7 @@ module.exports = {
     if (command.requireModRole && config.modRoleId) {
       if (!message.member.roles.cache.has(config.modRoleId)) {
         return message.reply({
-          content: '❌ Seuls les modérateurs peuvent utiliser cette commande.',
+          content: 'Seuls les modérateurs peuvent utiliser cette commande.',
           ephemeral: false,
         });
       }
@@ -60,7 +67,7 @@ module.exports = {
       if (now < expirationTime) {
         const timeLeft = (expirationTime - now) / 1000;
         return message.reply(
-          `⏳ Attends ${timeLeft.toFixed(1)} seconde(s) avant de réutiliser la commande \'${command.data.name}\'.`
+          `Attends ${timeLeft.toFixed(1)} seconde(s) avant de réutiliser la commande '${command.data.name}'.`
         );
       }
     }
@@ -73,7 +80,7 @@ module.exports = {
       await command.execute(message, args, client);
     } catch (error) {
       console.error(`Erreur dans la commande ${command.data.name}:`, error);
-      const errorMsg = { content: '❌ Une erreur est survenue lors de l\'exécution de cette commande.' };
+      const errorMsg = { content: 'Une erreur est survenue lors de l\'exécution de cette commande.' };
       if (message.deferred || message.replied) {
         await message.followUp(errorMsg);
       } else {

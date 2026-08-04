@@ -180,5 +180,33 @@
       "ignoreBots": true,
       "maxSnipes": 50
     }
+  },
+  "antiraid": {
+    "enabled": true,
+    "commands": {
+      "antiraid": true
+    },
+    "settings": {
+      "logChannel": "",
+      "accountAgeDays": 0,
+      "requireAvatar": false,
+      "maxJoinsCount": 5,
+      "maxJoinsWindow": 10,
+      "joinPunishment": "kick",
+      "antiSpam": true,
+      "spamMaxMessages": 8,
+      "spamWindow": 5,
+      "spamPunishment": "mute",
+      "antiMention": true,
+      "maxMentions": 5,
+      "mentionPunishment": "mute",
+      "antiInvite": true,
+      "antiWebhook": true,
+      "antiZalgo": true,
+      "antiMassEmoji": true,
+      "maxEmojiPerMsg": 15,
+      "autoLockChannels": true,
+      "autoUnlockMinutes": 10
+    }
   }
 }
