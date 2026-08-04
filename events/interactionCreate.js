@@ -70,6 +70,11 @@ module.exports = {
     if (customId.startsWith('ms_') && !isFeatureEnabled('games')) return interaction.reply({ content: '❌ Jeux désactivés.', ephemeral: true });
     if (customId.startsWith('c4_') && !isFeatureEnabled('games')) return interaction.reply({ content: '❌ Jeux désactivés.', ephemeral: true });
     if (customId.startsWith('gw_join_') && !isFeatureEnabled('social')) return interaction.reply({ content: '❌ Social désactivé.', ephemeral: true });
+    if (customId.startsWith('boutique_')) {
+      if (!isFeatureEnabled('economy')) return interaction.reply({ content: '❌ Boutique désactivée.', ephemeral: true });
+      try { const b = require('../commands/boutique'); if (b.handleButton) await b.handleButton(interaction, client); } catch (e) { console.error('Boutique btn:', e); }
+      return;
+    }
 
     // ── Ticket Buttons ──────────────────────────────────────────────
     if (customId === 'create_ticket') {

@@ -4,6 +4,7 @@ const path = require('path');
 const http = require('http');
 const config = require('./config');
 const { getAllFeatures, toggleFeature, toggleCommand, updateFeatureSettings, FEATURE_DEFINITIONS } = require('./features');
+const shopdata = require('./shopdata');
 
 const API_KEY = process.env.API_KEY || 'gamer-mg-bot-2024';
 
@@ -51,7 +52,7 @@ const PORT = process.env.PORT || 3000;
 
 function handleRequest(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
@@ -152,6 +153,46 @@ function handleRequest(req, res) {
       } catch { return badReq(); }
     });
     return;
+  }
+
+  // ── Shop API ─────────────────────────────────────────────────
+  if (req.method === 'GET' && url.pathname === '/api/shop') {
+    if (authKey !== API_KEY) return authErr();
+    return ok({ products: shopdata.getAll(), stats: shopdata.getStats() });
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/shop') {
+    if (authKey !== API_KEY) return authErr();
+    readBody(body => {
+      try {
+        const product = JSON.parse(body);
+        if (!product.name) return badReq('Nom requis');
+        const created = shopdata.add(product);
+        return ok({ success: true, product: created });
+      } catch { return badReq(); }
+    });
+    return;
+  }
+
+  if (req.method === 'PUT' && url.pathname.startsWith('/api/shop/')) {
+    if (authKey !== API_KEY) return authErr();
+    const id = url.pathname.replace('/api/shop/', '');
+    readBody(body => {
+      try {
+        const updates = JSON.parse(body);
+        const updated = shopdata.update(id, updates);
+        if (!updated) return badReq('Produit introuvable');
+        return ok({ success: true, product: updated });
+      } catch { return badReq(); }
+    });
+    return;
+  }
+
+  if (req.method === 'DELETE' && url.pathname.startsWith('/api/shop/')) {
+    if (authKey !== API_KEY) return authErr();
+    const id = url.pathname.replace('/api/shop/', '');
+    if (shopdata.remove(id)) return ok({ success: true });
+    return badReq('Produit introuvable');
   }
 
   // POST /api/restart
