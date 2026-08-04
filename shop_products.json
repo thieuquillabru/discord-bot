@@ -1,13 +1,14 @@
 [
   {
     "id": "msemwkcvbwon3",
-    "name": "Clavier Mécanique RGB",
+    "name": "Clavier Mécanique RGB F61 Pro",
     "description": "Switches Cherry MX Blue, rétroéclairage personnalisable",
-    "price": 35000,
-    "image": "https://i.imgur.com/8kz3pF2.jpeg",
+    "price": 150000,
+    "image": "https://images-na.ssl-images-amazon.com/images/I/718EMwzB3AL._AC_SL1500_.jpg",
     "category": "premium",
-    "stock": 10,
+    "stock": 1,
     "active": true,
-    "createdAt": 1785846512911
+    "createdAt": 1785846512911,
+    "updatedAt": 1785847106012
   }
 ]
