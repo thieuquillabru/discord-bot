@@ -382,7 +382,61 @@
       .form-row { grid-template-columns:1fr; }
       .shop-form-overlay.active { padding:50px 12px 24px; }
       .shop-form-header, .shop-form-body, .shop-form-footer { padding-left:20px; padding-right:20px; }
+      .orders-grid { grid-template-columns:1fr; }
+      .order-header { flex-direction:column; align-items:flex-start; }
+      .order-actions { width:100%; justify-content:flex-start; }
     }
+
+    /* ═══════ ORDERS SECTION ═══════ */
+    .orders-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+    .orders-filter-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .filter-chip { padding:6px 16px; background:transparent; border:1px solid var(--border); border-radius:2px; color:var(--text-secondary); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:1px; cursor:pointer; transition:all 0.2s; }
+    .filter-chip:hover { border-color:var(--border-hover); color:var(--text-primary); }
+    .filter-chip.active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,240,255,0.06); }
+
+    .orders-grid { display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:36px; }
+    .order-card { background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:20px 24px; position:relative; overflow:hidden; transition:all 0.3s; }
+    .order-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:var(--order-color,var(--cyan)); }
+    .order-card:hover { border-color:var(--border-hover); background:var(--bg-card-hover); }
+
+    .order-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+    .order-header-left { flex:1; min-width:0; }
+    .order-id { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-muted); letter-spacing:1px; margin-bottom:4px; }
+    .order-product { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .order-price { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:700; color:var(--green); text-shadow:0 0 8px rgba(10,255,127,0.3); white-space:nowrap; }
+
+    .order-details { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 24px; margin-bottom:14px; }
+    .order-detail { display:flex; align-items:center; gap:8px; }
+    .order-detail .material-icons-round { font-size:16px; color:var(--text-muted); }
+    .order-detail-label { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    .order-detail-value { font-family:'Share Tech Mono',monospace; font-size:13px; color:var(--text-secondary); }
+
+    .order-status-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:2px; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:1px; font-weight:600; border:1px solid; }
+    .order-status-badge.pending { color:#FFE156; border-color:rgba(255,225,86,0.3); background:rgba(255,225,86,0.06); }
+    .order-status-badge.confirmed { color:#00f0ff; border-color:rgba(0,240,255,0.3); background:rgba(0,240,255,0.06); }
+    .order-status-badge.delivered { color:#0aff7f; border-color:rgba(10,255,127,0.3); background:rgba(10,255,127,0.06); }
+    .order-status-badge.cancelled { color:#ff1744; border-color:rgba(255,23,68,0.3); background:rgba(255,23,68,0.06); }
+
+    .order-email-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:2px; font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.5px; }
+    .order-email-badge.sent { color:var(--green); border:1px solid rgba(10,255,127,0.2); background:rgba(10,255,127,0.04); }
+    .order-email-badge.failed { color:var(--red); border:1px solid rgba(255,23,68,0.2); background:rgba(255,23,68,0.04); }
+
+    .order-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; }
+    .order-date { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-muted); }
+    .order-actions { display:flex; gap:8px; align-items:center; }
+    .order-actions select { padding:6px 30px 6px 10px; background:var(--bg-deep); border:1px solid var(--border); border-radius:2px; color:var(--cyan); font-family:'Share Tech Mono',monospace; font-size:11px; outline:none; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3l3 4 3-4' stroke='%2300f0ff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
+    .order-actions select:focus { border-color:var(--cyan); }
+    .order-actions select option { background:var(--bg-card); color:var(--text-primary); }
+    .btn-order-action { padding:6px 14px; background:transparent; border:1px solid var(--border); border-radius:2px; color:var(--text-secondary); font-family:'Share Tech Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:4px; }
+    .btn-order-action:hover { border-color:var(--cyan); color:var(--cyan); }
+    .btn-order-action.danger:hover { border-color:var(--red); color:var(--red); }
+
+    .orders-empty { text-align:center; padding:60px 20px; color:var(--text-muted); }
+    .orders-empty .material-icons-round { font-size:56px; opacity:0.3; margin-bottom:16px; }
+    .orders-empty p { font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:2px; }
+
+    .orders-revenue { font-family:'Orbitron',sans-serif; font-size:13px; color:var(--green); letter-spacing:1px; }
   </style>
 </head>
 <body>
@@ -438,6 +492,9 @@
       </button>
       <button class="nav-tab" data-tab="shop" onclick="switchTab('shop')">
         <span class="material-icons-round" style="font-size:18px">storefront</span> Boutique
+      </button>
+      <button class="nav-tab" data-tab="orders" onclick="switchTab('orders')">
+        <span class="material-icons-round" style="font-size:18px">receipt_long</span> Commandes
       </button>
     </nav>
 
@@ -510,6 +567,58 @@
       <div class="shop-empty" id="shopEmpty" style="display:none">
         <span class="material-icons-round">storefront</span>
         <p>// AUCUN PRODUIT DANS LA BOUTIQUE</p>
+      </div>
+    </main>
+
+    <!-- ═══════ ORDERS SECTION ═══════ -->
+    <main class="content" id="ordersSection" style="display:none">
+      <div class="section-title">
+        <span class="material-icons-round">receipt_long</span> Commandes
+      </div>
+
+      <div class="orders-stats" id="ordersStats">
+        <div class="shop-stat" style="--stat-color:var(--cyan)">
+          <div class="shop-stat-label">Total</div>
+          <div class="shop-stat-value cyan" id="ordStatTotal">0</div>
+        </div>
+        <div class="shop-stat" style="--stat-color:#FFE156">
+          <div class="shop-stat-label">En attente</div>
+          <div class="shop-stat-value" style="color:#FFE156" id="ordStatPending">0</div>
+        </div>
+        <div class="shop-stat" style="--stat-color:var(--cyan)">
+          <div class="shop-stat-label">Confirmées</div>
+          <div class="shop-stat-value cyan" id="ordStatConfirmed">0</div>
+        </div>
+        <div class="shop-stat" style="--stat-color:var(--green)">
+          <div class="shop-stat-label">Livrées</div>
+          <div class="shop-stat-value green" id="ordStatDelivered">0</div>
+        </div>
+        <div class="shop-stat" style="--stat-color:var(--red)">
+          <div class="shop-stat-label">Annulées</div>
+          <div class="shop-stat-value" style="color:var(--red)" id="ordStatCancelled">0</div>
+        </div>
+        <div class="shop-stat" style="--stat-color:var(--green)">
+          <div class="shop-stat-label">Revenus</div>
+          <div class="orders-revenue" id="ordStatRevenue">0 Ar</div>
+        </div>
+      </div>
+
+      <div class="orders-filter-bar">
+        <div class="filter-chips" id="orderFilterChips">
+          <button class="filter-chip active" data-filter="all" onclick="filterOrders('all')">Toutes</button>
+          <button class="filter-chip" data-filter="pending" onclick="filterOrders('pending')">En attente</button>
+          <button class="filter-chip" data-filter="confirmed" onclick="filterOrders('confirmed')">Confirmées</button>
+          <button class="filter-chip" data-filter="delivered" onclick="filterOrders('delivered')">Livrées</button>
+          <button class="filter-chip" data-filter="cancelled" onclick="filterOrders('cancelled')">Annulées</button>
+        </div>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:1px" id="ordersCount">// 0 COMMANDES</span>
+      </div>
+
+      <div class="orders-grid" id="ordersGrid"></div>
+
+      <div class="orders-empty" id="ordersEmpty" style="display:none">
+        <span class="material-icons-round">receipt_long</span>
+        <p>// AUCUNE COMMANDE</p>
       </div>
     </main>
   </div>
@@ -945,11 +1054,17 @@
     function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     // ═══════ TAB SWITCHING ═══════
+    var currentOrderFilter = 'all';
+    var allOrders = [];
+    var orderStats = {};
+
     function switchTab(tab) {
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
       document.getElementById('modulesSection').style.display = tab === 'modules' ? '' : 'none';
       document.getElementById('shopSection').style.display = tab === 'shop' ? '' : 'none';
+      document.getElementById('ordersSection').style.display = tab === 'orders' ? '' : 'none';
       if (tab === 'shop') fetchShop();
+      if (tab === 'orders') fetchOrders();
     }
 
     // ═══════ SHOP / BOUTIQUE ═══════
@@ -1098,6 +1213,112 @@
         if (!r.ok) throw new Error(d.error || 'ÉCHEC');
         toast('PRODUIT SUPPRIMÉ', 'success');
         fetchShop();
+      } catch (e) { toast('ERREUR: ' + e.message, 'error'); }
+    }
+
+    // ═══════ ORDERS / COMMANDES ═══════
+    const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirm\u00e9', delivered: 'Livr\u00e9', cancelled: 'Annul\u00e9' };
+    const STATUS_ICONS = { pending: 'schedule', confirmed: 'verified', delivered: 'local_shipping', cancelled: 'cancel' };
+
+    async function fetchOrders() {
+      try {
+        const r = await fetch(BOT_API + '/api/orders?key=' + encodeURIComponent(apiKey) + '&status=' + currentOrderFilter);
+        if (!r.ok) return;
+        const d = await r.json();
+        allOrders = d.orders || [];
+        orderStats = d.stats || {};
+        renderOrderStats();
+        renderOrders();
+      } catch {}
+    }
+
+    function renderOrderStats() {
+      const s = orderStats;
+      document.getElementById('ordStatTotal').textContent = s.total || 0;
+      document.getElementById('ordStatPending').textContent = s.pending || 0;
+      document.getElementById('ordStatConfirmed').textContent = s.confirmed || 0;
+      document.getElementById('ordStatDelivered').textContent = s.delivered || 0;
+      document.getElementById('ordStatCancelled').textContent = s.cancelled || 0;
+      document.getElementById('ordStatRevenue').textContent = (s.totalRevenue || 0).toLocaleString('fr-FR') + ' Ar';
+    }
+
+    function filterOrders(filter) {
+      currentOrderFilter = filter;
+      document.querySelectorAll('#orderFilterChips .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
+      fetchOrders();
+    }
+
+    function renderOrders() {
+      const grid = document.getElementById('ordersGrid');
+      const empty = document.getElementById('ordersEmpty');
+      const orders = Array.isArray(allOrders) ? allOrders : [];
+
+      document.getElementById('ordersCount').textContent = '// ' + orders.length + ' COMMANDE' + (orders.length > 1 ? 'S' : '');
+
+      if (orders.length === 0) { grid.innerHTML = ''; empty.style.display = ''; return; }
+      empty.style.display = 'none';
+
+      grid.innerHTML = orders.map(o => {
+        const date = new Date(o.createdAt).toLocaleString('fr-FR', { timeZone: 'Indian/Antananarivo', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        const updatedDate = o.updatedAt !== o.createdAt ? new Date(o.updatedAt).toLocaleString('fr-FR', { timeZone: 'Indian/Antananarivo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+        const statusColor = { pending:'#FFE156', confirmed:'#00f0ff', delivered:'#0aff7f', cancelled:'#ff1744' }[o.status] || 'var(--cyan)';
+        const imgHtml = o.productImage ? '<img src="' + escHtml(o.productImage) + '" style="width:40px;height:40px;border-radius:2px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display=\'none\'">' : '';
+        const notesHtml = o.notes && o.notes.length ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">' + o.notes.map(n => '<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--text-muted);margin-bottom:4px"><span class="material-icons-round" style="font-size:12px;vertical-align:middle">note</span> ' + escHtml(n.text) + ' <span style="opacity:0.5">— ' + new Date(n.at).toLocaleString('fr-FR',{timeZone:'Indian/Antananarivo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + '</span></div>').join('') + '</div>' : '';
+
+        return '<div class="order-card" id="order-' + o.id + '" style="--order-color:' + statusColor + '">' +
+          '<div class="order-header"><div class="order-header-left" style="display:flex;gap:12px;align-items:center">' + imgHtml +
+          '<div><div class="order-id">#' + o.id + '</div>' +
+          '<div class="order-product">' + escHtml(o.productName || 'Inconnu') + '</div></div></div>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">' +
+          '<div class="order-price">' + (o.productPrice || 0).toLocaleString('fr-FR') + ' Ar</div>' +
+          '<span class="order-status-badge ' + o.status + '"><span class="material-icons-round" style="font-size:14px">' + STATUS_ICONS[o.status] + '</span> ' + STATUS_LABELS[o.status] + '</span>' +
+          '</div></div>' +
+
+          '<div class="order-details">' +
+          '<div class="order-detail"><span class="material-icons-round">person</span><div><div class="order-detail-label">Acheteur</div><div class="order-detail-value">' + escHtml(o.username || 'Inconnu') + '</div></div></div>' +
+          '<div class="order-detail"><span class="material-icons-round">phone</span><div><div class="order-detail-label">Num\u00e9ro d\'envoi</div><div class="order-detail-value">' + escHtml(o.senderNumber || '-') + '</div></div></div>' +
+          '<div class="order-detail"><span class="material-icons-round">email</span><div><div class="order-detail-label">Email</div>' +
+          (o.emailSent ? '<span class="order-email-badge sent"><span class="material-icons-round" style="font-size:12px">check_circle</span> Envoy\u00e9 \u00e0 ' + escHtml(o.emailTo || '') + '</span>' : '<span class="order-email-badge failed"><span class="material-icons-round" style="font-size:12px">error</span> Non envoy\u00e9</span>') +
+          '</div></div>' +
+          '</div>' +
+
+          notesHtml +
+
+          '<div class="order-footer">' +
+          '<div class="order-date"><span class="material-icons-round" style="font-size:14px;vertical-align:middle">schedule</span> ' + date + (updatedDate ? ' <span style="opacity:0.5">(mis \u00e0 jour ' + updatedDate + ')</span>' : '') + '</div>' +
+          '<div class="order-actions">' +
+          '<select id="status-sel-' + o.id + '" onchange="changeOrderStatus(\'' + o.id + '\',this.value)">' +
+          '<option value="pending"' + (o.status==='pending'?' selected':'') + '>En attente</option>' +
+          '<option value="confirmed"' + (o.status==='confirmed'?' selected':'') + '>Confirm\u00e9</option>' +
+          '<option value="delivered"' + (o.status==='delivered'?' selected':'') + '>Livr\u00e9</option>' +
+          '<option value="cancelled"' + (o.status==='cancelled'?' selected':'') + '>Annul\u00e9</option>' +
+          '</select>' +
+          '<button class="btn-order-action danger" onclick="deleteOrder(\'' + o.id + '\')"><span class="material-icons-round" style="font-size:14px">delete</span></button>' +
+          '</div></div></div>';
+      }).join('');
+    }
+
+    async function changeOrderStatus(id, newStatus) {
+      try {
+        const r = await fetch(BOT_API + '/api/orders/' + id + '/status?key=' + encodeURIComponent(apiKey), {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.error);
+        toast('COMMANDE #' + id + ' \u2192 ' + STATUS_LABELS[newStatus], 'success');
+        fetchOrders();
+      } catch (e) { toast('ERREUR: ' + e.message, 'error'); }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('Supprimer la commande #' + id + ' ?')) return;
+      try {
+        const r = await fetch(BOT_API + '/api/orders/' + id + '?key=' + encodeURIComponent(apiKey), { method: 'DELETE' });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.error);
+        toast('COMMANDE SUPPRIM\u00c9E', 'success');
+        fetchOrders();
       } catch (e) { toast('ERREUR: ' + e.message, 'error'); }
     }
 

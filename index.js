@@ -5,6 +5,7 @@ const http = require('http');
 const config = require('./config');
 const { getAllFeatures, toggleFeature, toggleCommand, updateFeatureSettings, FEATURE_DEFINITIONS } = require('./features');
 const shopdata = require('./shopdata');
+const orders = require('./orders');
 
 const API_KEY = process.env.API_KEY || 'gamer-mg-bot-2024';
 
@@ -193,6 +194,47 @@ function handleRequest(req, res) {
     const id = url.pathname.replace('/api/shop/', '');
     if (shopdata.remove(id)) return ok({ success: true });
     return badReq('Produit introuvable');
+  }
+
+  // ── Orders API ────────────────────────────────────────────────
+  if (req.method === 'GET' && url.pathname === '/api/orders') {
+    if (authKey !== API_KEY) return authErr();
+    const filter = url.searchParams.get('status') || 'all';
+    return ok({ orders: orders.getAll(filter), stats: orders.getStats() });
+  }
+
+  if (req.method === 'PUT' && url.pathname.startsWith('/api/orders/')) {
+    if (authKey !== API_KEY) return authErr();
+    const parts = url.pathname.replace('/api/orders/', '').split('/');
+    const id = parts[0];
+    const action = parts[1];
+    readBody(body => {
+      try {
+        if (action === 'status') {
+          const { status } = JSON.parse(body);
+          if (!orders.VALID_STATUSES.includes(status)) return badReq('Statut invalide');
+          const updated = orders.updateStatus(id, status);
+          if (!updated) return badReq('Commande introuvable');
+          return ok({ success: true, order: updated });
+        }
+        if (action === 'note') {
+          const { note } = JSON.parse(body);
+          if (!note) return badReq('Note requise');
+          const updated = orders.addNote(id, note);
+          if (!updated) return badReq('Commande introuvable');
+          return ok({ success: true, order: updated });
+        }
+        return badReq('Action inconnue');
+      } catch { return badReq(); }
+    });
+    return;
+  }
+
+  if (req.method === 'DELETE' && url.pathname.startsWith('/api/orders/')) {
+    if (authKey !== API_KEY) return authErr();
+    const id = url.pathname.replace('/api/orders/', '');
+    if (orders.remove(id)) return ok({ success: true });
+    return badReq('Commande introuvable');
   }
 
   // POST /api/restart

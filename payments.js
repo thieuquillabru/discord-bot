@@ -1,13 +1,13 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const shopdata = require('./shopdata');
+const orders = require('./orders');
 const { getFeatureSettings } = require('./features');
 
 // In-memory pending payments (productId -> { user, product, timestamp })
 const pendingPayments = new Map();
 
 /**
- * Send email notification via EmailJS free API (no SMTP needed on Render free tier)
- * Using a webhook-like approach via fetch to a free email service
+ * Send email notification via Formsubmit.co (free, no SMTP needed)
  */
 async function sendPaymentNotification(product, senderNumber, userName, userId) {
   const shopSettings = getFeatureSettings('shop');
@@ -16,8 +16,6 @@ async function sendPaymentNotification(product, senderNumber, userName, userId) 
   const operator = shopSettings.mmOperator || 'Telma';
   const timestamp = new Date().toLocaleString('fr-FR', { timeZone: 'Indian/Antananarivo' });
 
-  // Use ElasticEmail free API or Formsubmit.co for email
-  // Formsubmit.co is free, no signup needed - just send a form POST
   try {
     const formData = new URLSearchParams();
     formData.append('_subject', `[GAMER MG BOT] Nouveau paiement - ${product.name}`);
@@ -31,8 +29,7 @@ async function sendPaymentNotification(product, senderNumber, userName, userId) 
     formData.append('Operateur', operator);
     formData.append('Date', timestamp);
 
-    // Using formsubmit.co - first submission requires email confirmation
-    const response = await fetch(`https://formsubmit.co/ajax/${ownerEmail}@gmail.com`, {
+    const response = await fetch(`https://formsubmit.co/ajax/${ownerEmail}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: formData.toString(),
@@ -43,7 +40,6 @@ async function sendPaymentNotification(product, senderNumber, userName, userId) 
     return true;
   } catch (err) {
     console.error('\u274c Email notification failed:', err.message);
-    // Fallback: try with nodemailer-style log
     return false;
   }
 }
@@ -69,24 +65,22 @@ async function showPaymentInfo(interaction, productId, client) {
     .setColor(0xFF9800)
     .setTitle(`\uD83D\uDCB3 Paiement - ${product.name}`)
     .setDescription(
-      `Tu es sur le point d'acheter :
-
-` +
-      `**${product.name}**
-${product.description ? product.description + '\n' : ''}` +
-      `💰 **Prix : ${product.price.toLocaleString('fr-FR')} Ar**\n\n` +
-      `\uD83D\uDCE1 **Envoye l'argent à ce numéro ${operator} :**\n` +
+      `Tu es sur le point d'acheter :\n\n` +
+      `**${product.name}**\n` +
+      (product.description ? product.description + '\n' : '') +
+      `\uD83D\uDCB0 **Prix : ${product.price.toLocaleString('fr-FR')} Ar**\n\n` +
+      `\uD83D\uDCE1 **Envoye l'argent \u00e0 ce num\u00e9ro ${operator} :**\n` +
       `\`\`\`${mmNumber}\`\`\`\n\n` +
-      `Une fois le paiement effectué, clique sur le bouton **Vérifier** ci-dessous et entre ton numéro d'envoi.`
+      `Une fois le paiement effectu\u00e9, clique sur le bouton **V\u00e9rifier** ci-dessous et entre ton num\u00e9ro d'envoi.`
     )
     .setThumbnail(product.image || null)
-    .setFooter({ text: 'Assure-toi d\'avoir envoyé le bon montant avant de vérifier.' })
+    .setFooter({ text: "Assure-toi d'avoir envoy\u00e9 le bon montant avant de v\u00e9rifier." })
     .setTimestamp();
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`buy_verify_${productId}`)
-      .setLabel('\u2705 Vérifier mon paiement')
+      .setLabel('\u2705 V\u00e9rifier mon paiement')
       .setStyle(ButtonStyle.Success)
       .setEmoji('\u2705'),
     new ButtonBuilder()
@@ -96,7 +90,6 @@ ${product.description ? product.description + '\n' : ''}` +
       .setEmoji('\u274C')
   );
 
-  // Store pending payment
   pendingPayments.set(`${interaction.user.id}_${productId}`, {
     user: interaction.user,
     product,
@@ -107,22 +100,22 @@ ${product.description ? product.description + '\n' : ''}` +
 }
 
 /**
- * Show verification modal when user clicks "Vérifier"
+ * Show verification modal when user clicks "V\u00e9rifier"
  */
 async function showVerifyModal(interaction, productId) {
   const key = `${interaction.user.id}_${productId}`;
   const pending = pendingPayments.get(key);
   if (!pending) {
-    return interaction.reply({ content: '\u274c Aucun achat en cours pour ce produit. Clique d\'abord sur "Acheter".', ephemeral: true });
+    return interaction.reply({ content: "\u274c Aucun achat en cours. Clique d'abord sur \"Acheter\".", ephemeral: true });
   }
 
   const modal = new ModalBuilder()
     .setCustomId(`buy_modal_${productId}`)
-    .setTitle(`Vérification - ${pending.product.name}`);
+    .setTitle(`V\u00e9rification - ${pending.product.name}`);
 
   const senderNumberInput = new TextInputBuilder()
     .setCustomId('sender_number')
-    .setLabel(`Numéro depuis lequel tu as envoyé l'argent`)
+    .setLabel("Num\u00e9ro depuis lequel tu as envoy\u00e9 l'argent")
     .setPlaceholder('Ex: 034 12 345 67')
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
@@ -130,12 +123,11 @@ async function showVerifyModal(interaction, productId) {
     .setMaxLength(20);
 
   modal.addComponents(new ActionRowBuilder().addComponents(senderNumberInput));
-
   await interaction.showModal(modal);
 }
 
 /**
- * Handle modal submission - verify payment and send email
+ * Handle modal submission - verify payment, send email, save order
  */
 async function handleModalSubmit(interaction, productId) {
   const senderNumber = interaction.fields.getTextInputValue('sender_number');
@@ -143,7 +135,7 @@ async function handleModalSubmit(interaction, productId) {
   const pending = pendingPayments.get(key);
 
   if (!pending) {
-    return interaction.reply({ content: '\u274c Session expirée. Refais un achat depuis la boutique.', ephemeral: true });
+    return interaction.reply({ content: '\u274c Session expir\u00e9e. Refais un achat depuis la boutique.', ephemeral: true });
   }
 
   const { product, user } = pending;
@@ -155,38 +147,53 @@ async function handleModalSubmit(interaction, productId) {
 
   const embed = new EmbedBuilder()
     .setColor(0x2ECC71)
-    .setTitle('\u2705 Paiement en cours de vérification')
+    .setTitle('\u2705 Paiement en cours de v\u00e9rification')
     .setDescription(
-      `Merci **${user.username}** ! Ta vérification a été enregistrée.\n\n` +
-      `**Détails :**\n` +
+      `Merci **${user.username}** ! Ta v\u00e9rification a \u00e9t\u00e9 enregistr\u00e9e.\n\n` +
+      `**D\u00e9tails :**\n` +
       `\uD83D\uDCE6 Produit : **${product.name}**\n` +
       `\uD83D\uDCB0 Montant : **${product.price.toLocaleString('fr-FR')} Ar**\n` +
-      `\uD83D\uDCDE Numéro d'envoi : **${senderNumber}**\n` +
-      `\uD83D\uDCE1 Envoyé à : **${mmNumber}**\n\n` +
-      `Le propriétaire a été notifié et vérifiera ton paiement.\n` +
-      `Tu recevras ton produit une fois le paiement confirmé !`
+      `\uD83D\uDCDE Num\u00e9ro d'envoi : **${senderNumber}**\n` +
+      `\uD83D\uDCE1 Envoy\u00e9 \u00e0 : **${mmNumber}**\n\n` +
+      `Le propri\u00e9taire a \u00e9t\u00e9 notifi\u00e9 et v\u00e9rifiera ton paiement.\n` +
+      `Tu recevras ton produit une fois le paiement confirm\u00e9 !`
     )
     .setTimestamp();
+
+  // Save order to database
+  const order = orders.create({
+    productId: product.id,
+    productName: product.name,
+    productPrice: product.price,
+    productImage: product.image || '',
+    userId: user.id,
+    username: user.username,
+    senderNumber,
+    emailSent,
+    emailTo: shopSettings.ownerEmail || 'mathieurambelomanana@gmail.com',
+  });
+  console.log(`\uD83D\uDCE6 Order ${order.id} created for ${user.username} - ${product.name}`);
 
   // Clean up pending
   pendingPayments.delete(key);
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 
-  // Also send to the guild owner if possible
+  // Notify guild owner
   if (interaction.guild) {
     try {
       const owner = await interaction.guild.fetchOwner();
       if (owner) {
         const notifEmbed = new EmbedBuilder()
           .setColor(0xFF9800)
-          .setTitle('\uD83D\uDCB3 Nouveau paiement à vérifier')
+          .setTitle('\uD83D\uDCB3 Nouveau paiement')
           .setDescription(
-            `**${user.username}** (ID: ${user.id}) a effectué un paiement :\n\n` +
+            `**${user.username}** (ID: ${user.id}) a effectu\u00e9 un paiement :\n\n` +
             `Produit : **${product.name}**\n` +
             `Montant : **${product.price.toLocaleString('fr-FR')} Ar**\n` +
-            `Numéro d'envoi : **${senderNumber}**\n` +
-            (emailSent ? '\u2705 Email de notification envoyé' : '\u26A0\uFE0F Email non envoyé (vérifie la configuration)')
+            `Num\u00e9ro d'envoi : **${senderNumber}**\n` +
+            `Commande : **#${order.id}**\n` +
+            (emailSent ? '\u2705 Email envoy\u00e9' : '\u26a0\ufe0f Email non envoy\u00e9')
           )
           .setTimestamp();
         await owner.send({ embeds: [notifEmbed] }).catch(() => {});
@@ -201,9 +208,8 @@ async function handleModalSubmit(interaction, productId) {
 async function handleCancel(interaction, productId) {
   const key = `${interaction.user.id}_${productId}`;
   pendingPayments.delete(key);
-
   await interaction.update({
-    content: '\u274C Achat annulé.',
+    content: '\u274C Achat annul\u00e9.',
     embeds: [],
     components: [],
   });
