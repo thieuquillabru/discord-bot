@@ -334,7 +334,23 @@ client.once('ready', async () => {
     }
   }
 
-  client.user.setActivity('/help pour commencer', { type: 'PLAYING' });
+  // Presence professionnelle avec rotation
+  const presenceList = [
+    // ActivityType.Watching = 3
+    { name: 'Gamer MG', type: 3 },
+    // ActivityType.Listening = 2
+    { name: '/help \u2022 Commandes', type: 2 },
+    // ActivityType.Playing = 0
+    { name: '/boutique \u2022 Boutique', type: 0 },
+  ];
+  let pi = 0;
+  const rotatePresence = () => {
+    const p = presenceList[pi % presenceList.length];
+    client.user.setActivity(p.name, { type: p.type });
+    pi++;
+  };
+  rotatePresence();
+  setInterval(rotatePresence, 30000);
 });
 
 // ── Error handling ────────────────────────────────────────────────
