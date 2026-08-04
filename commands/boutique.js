@@ -1,8 +1,12 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const shopdata = require('../shopdata');
-const { getFeatureSettings } = require('../features');
 
 const PER_PAGE = 3;
+
+/** Returns true if url looks like a valid http(s) link (not a data URI) */
+function isValidImageUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) && url.length <= 2048;
+}
 
 module.exports = {
   data: { name: 'boutique' },
@@ -12,19 +16,19 @@ module.exports = {
 
   async execute(msg, args, client) {
     try {
-      if (msg._interaction) {
-        await this.showShop(msg, 1);
-      } else {
-        await this.showShop(msg, 1);
-      }
+      await msg.deferReply({ ephemeral: true });
+      await this.showShop(msg, 1);
     } catch (err) {
       console.error('[BOUTIQUE] Erreur execute:', err);
-      const errorReply = { content: '\u274c Une erreur est survenue lors de l\'affichage de la boutique.', ephemeral: true };
+      const errorReply = { content: '\u274c Une erreur est survenue lors de l\'affichage de la boutique.', embeds: [], components: [] };
       try {
-        if (msg.replied || msg.deferred) await msg.followUp(errorReply);
-        else await msg.reply(errorReply);
-      } catch (replyErr) {
-        console.error('[BOUTIQUE] Erreur reply:', replyErr);
+        await msg.editReply(errorReply);
+      } catch {
+        try {
+          await msg.followUp({ ...errorReply, ephemeral: true });
+        } catch (replyErr) {
+          console.error('[BOUTIQUE] Erreur reply fallback:', replyErr);
+        }
       }
     }
   },
@@ -39,8 +43,7 @@ module.exports = {
         .setColor(0xE74C3C)
         .setTitle('\uD83C\uDFEA Boutique')
         .setDescription('Erreur de chargement des produits. R\u00e9essaie plus tard.');
-      if (msg.replied || msg.deferred) return msg.followUp({ embeds: [embed], ephemeral: true });
-      return msg.reply({ embeds: [embed], ephemeral: true });
+      return msg.editReply({ embeds: [embed] });
     }
 
     if (categoryFilter) {
@@ -52,8 +55,7 @@ module.exports = {
         .setColor(0x808080)
         .setTitle('\uD83C\uDFEA Boutique')
         .setDescription('Aucun produit disponible pour le moment.\nReviens plus tard !');
-      if (msg.replied || msg.deferred) return msg.followUp({ embeds: [embed], ephemeral: true });
-      return msg.reply({ embeds: [embed], ephemeral: true });
+      return msg.editReply({ embeds: [embed] });
     }
 
     const totalPages = Math.max(1, Math.ceil(products.length / PER_PAGE));
@@ -77,8 +79,10 @@ module.exports = {
       });
     }
 
-    if (pageProducts[0]?.image) {
-      embed.setImage(pageProducts[0].image);
+    // Only set image if it's a valid http(s) URL (Discord rejects data URIs)
+    const imgUrl = pageProducts[0]?.image;
+    if (isValidImageUrl(imgUrl)) {
+      embed.setImage(imgUrl);
     }
 
     // Navigation row
@@ -86,13 +90,14 @@ module.exports = {
     if (p > 1) navRow.addComponents(new ButtonBuilder().setCustomId(`boutique_prev_${p}`).setLabel('\u25C0 Pr\u00e9c\u00e9dent').setStyle(ButtonStyle.Primary));
     if (p < totalPages) navRow.addComponents(new ButtonBuilder().setCustomId(`boutique_next_${p}`).setLabel('Suivant \u25B6').setStyle(ButtonStyle.Primary));
 
-    // Buy buttons row
+    // Buy buttons row — truncate label to 80 chars (Discord limit)
     const buyRow = new ActionRowBuilder();
     for (const prod of pageProducts) {
+      const label = `Acheter ${prod.name}`;
       buyRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`buy_${prod.id}`)
-          .setLabel(`Acheter ${prod.name}`)
+          .setLabel(label.length > 80 ? label.slice(0, 77) + '...') : label)
           .setStyle(ButtonStyle.Success)
           .setEmoji('\uD83D\uDCB3')
       );
@@ -105,8 +110,7 @@ module.exports = {
     const reply = { embeds: [embed] };
     if (components.length > 0) reply.components = components;
 
-    if (msg.replied || msg.deferred) await msg.followUp(reply);
-    else await msg.reply(reply);
+    await msg.editReply(reply);
   },
 
   async handleButton(interaction, client) {
@@ -142,7 +146,12 @@ module.exports = {
           inline: false,
         });
       }
-      if (pageProducts[0]?.image) embed.setImage(pageProducts[0].image);
+
+      // Only set image if it's a valid http(s) URL
+      const imgUrl = pageProducts[0]?.image;
+      if (isValidImageUrl(imgUrl)) {
+        embed.setImage(imgUrl);
+      }
 
       const navRow = new ActionRowBuilder();
       if (p > 1) navRow.addComponents(new ButtonBuilder().setCustomId(`boutique_prev_${p}`).setLabel('\u25C0 Pr\u00e9c\u00e9dent').setStyle(ButtonStyle.Primary));
@@ -150,10 +159,11 @@ module.exports = {
 
       const buyRow = new ActionRowBuilder();
       for (const prod of pageProducts) {
+        const label = `Acheter ${prod.name}`;
         buyRow.addComponents(
           new ButtonBuilder()
             .setCustomId(`buy_${prod.id}`)
-            .setLabel(`Acheter ${prod.name}`)
+            .setLabel(label.length > 80 ? label.slice(0, 77) + '...') : label)
             .setStyle(ButtonStyle.Success)
             .setEmoji('\uD83D\uDCB3')
         );

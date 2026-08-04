@@ -56,6 +56,14 @@ function getById(id) {
   return _load().find(p => p.id === id) || null;
 }
 
+function _sanitizeImageUrl(url) {
+  if (typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  // Only allow http(s) URLs — Discord embeds reject data URIs
+  if (/^https?:\/\//i.test(trimmed) && trimmed.length <= 2048) return trimmed;
+  return '';
+}
+
 function add(product) {
   const products = _load();
   const newProduct = {
@@ -63,7 +71,7 @@ function add(product) {
     name: product.name || 'Sans nom',
     description: product.description || '',
     price: Number(product.price) || 0,
-    image: product.image || '',
+    image: _sanitizeImageUrl(product.image),
     category: product.category || 'Général',
     stock: product.stock === undefined || product.stock === null ? -1 : Number(product.stock),
     active: true,
@@ -84,6 +92,7 @@ function update(id, updates) {
       if (key === 'price') products[idx][key] = Number(updates[key]);
       else if (key === 'stock') products[idx][key] = updates[key] === null ? -1 : Number(updates[key]);
       else if (key === 'active') products[idx][key] = !!updates[key];
+      else if (key === 'image') products[idx][key] = _sanitizeImageUrl(updates[key]);
       else products[idx][key] = updates[key];
     }
   }
