@@ -21,8 +21,8 @@ setInterval(() => {
  */
 async function sendPaymentNotification(product, senderNumber, userName, userId) {
   const shopSettings = getFeatureSettings('shop');
-  const ownerEmail = shopSettings.ownerEmail || 'mathieurambelomanana@gmail.com';
-  const mmNumber = shopSettings.mmNumber || '032 81 381 58';
+  const ownerEmail = shopSettings.ownerEmail || '';
+  const mmNumber = shopSettings.mmNumber || '';
   const operator = shopSettings.mmOperator || 'Telma';
   const timestamp = new Date().toLocaleString('fr-FR', { timeZone: 'Indian/Antananarivo' });
 
@@ -68,7 +68,7 @@ async function showPaymentInfo(interaction, productId, client) {
   }
 
   const shopSettings = getFeatureSettings('shop');
-  const mmNumber = shopSettings.mmNumber || '032 81 381 58';
+  const mmNumber = shopSettings.mmNumber || '';
   const operator = shopSettings.mmOperator || 'Telma';
 
   const embed = new EmbedBuilder()
@@ -156,7 +156,7 @@ async function handleModalSubmit(interaction, productId) {
 
   const { product, user } = pending;
   const shopSettings = getFeatureSettings('shop');
-  const mmNumber = shopSettings.mmNumber || '032 81 381 58';
+  const mmNumber = shopSettings.mmNumber || '';
 
   // Send email notification
   const emailSent = await sendPaymentNotification(product, senderNumber, user.username, user.id);
@@ -186,7 +186,7 @@ async function handleModalSubmit(interaction, productId) {
     username: user.username,
     senderNumber,
     emailSent,
-    emailTo: shopSettings.ownerEmail || 'mathieurambelomanana@gmail.com',
+    emailTo: shopSettings.ownerEmail || '',
   });
   console.log(`\uD83D\uDCE6 Order ${order.id} created for ${user.username} - ${product.name}`);
 

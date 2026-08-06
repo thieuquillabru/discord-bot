@@ -8,7 +8,10 @@ const shopdata = require('./shopdata');
 const orders = require('./orders');
 const db = require('./database');
 
-const API_KEY = process.env.API_KEY || 'gamer-mg-bot-2024';
+const API_KEY = process.env.API_KEY;
+if (!API_KEY) {
+  console.warn('[SECURITY] API_KEY env var is not set. HTTP API endpoints are disabled.');
+}
 
 // ── Rate limiter for HTTP API ────────────────────────────────
 const apiRateLimits = new Map(); // ip → { count, resetTime }
@@ -112,9 +115,19 @@ function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const authKey = url.searchParams.get('key') || (req.headers.authorization || '').replace('Bearer ', '');
 
-  function authErr() {
-    res.writeHead(401, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Cl\u00e9 API invalide' }));
+  // Block all authenticated endpoints if API_KEY is not configured
+  function checkApiEnabled() {
+    if (!API_KEY) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'API non configurée. Définissez API_KEY dans .env' }));
+      return false;
+    }
+    if (authKey !== API_KEY) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Clé API invalide' }));
+      return false;
+    }
+    return true;
   }
 
   function badReq(msg) {
@@ -142,7 +155,7 @@ function handleRequest(req, res) {
 
   // GET /api/status
   if (req.method === 'GET' && url.pathname === '/api/status') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const guild = client.guilds.cache.get(config.guildId);
     return ok({
       bot: {
@@ -163,13 +176,13 @@ function handleRequest(req, res) {
 
   // GET /api/features
   if (req.method === 'GET' && url.pathname === '/api/features') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     return ok({ features: getAllFeatures() });
   }
 
   // POST /api/features/toggle
   if (req.method === 'POST' && url.pathname === '/api/features/toggle') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     readBody(body => {
       try {
         const { feature, enabled } = JSON.parse(body);
@@ -184,7 +197,7 @@ function handleRequest(req, res) {
 
   // POST /api/features/command/toggle
   if (req.method === 'POST' && url.pathname === '/api/features/command/toggle') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     readBody(body => {
       try {
         const { command, enabled } = JSON.parse(body);
@@ -200,7 +213,7 @@ function handleRequest(req, res) {
 
   // POST /api/features/settings
   if (req.method === 'POST' && url.pathname === '/api/features/settings') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     readBody(body => {
       try {
         const { feature, settings } = JSON.parse(body);
@@ -216,12 +229,12 @@ function handleRequest(req, res) {
 
   // ── Shop API ─────────────────────────────────────────────────
   if (req.method === 'GET' && url.pathname === '/api/shop') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     return ok({ products: shopdata.getAll(), stats: shopdata.getStats() });
   }
 
   if (req.method === 'POST' && url.pathname === '/api/shop') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     readBody(body => {
       try {
         const product = JSON.parse(body);
@@ -234,7 +247,7 @@ function handleRequest(req, res) {
   }
 
   if (req.method === 'PUT' && url.pathname.startsWith('/api/shop/')) {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const id = url.pathname.replace('/api/shop/', '');
     readBody(body => {
       try {
@@ -248,7 +261,7 @@ function handleRequest(req, res) {
   }
 
   if (req.method === 'DELETE' && url.pathname.startsWith('/api/shop/')) {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const id = url.pathname.replace('/api/shop/', '');
     if (shopdata.remove(id)) return ok({ success: true });
     return badReq('Produit introuvable');
@@ -256,13 +269,13 @@ function handleRequest(req, res) {
 
   // ── Orders API ────────────────────────────────────────────────
   if (req.method === 'GET' && url.pathname === '/api/orders') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const filter = url.searchParams.get('status') || 'all';
     return ok({ orders: orders.getAll(filter), stats: orders.getStats() });
   }
 
   if (req.method === 'PUT' && url.pathname.startsWith('/api/orders/')) {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const parts = url.pathname.replace('/api/orders/', '').split('/');
     const id = parts[0];
     const action = parts[1];
@@ -289,7 +302,7 @@ function handleRequest(req, res) {
   }
 
   if (req.method === 'DELETE' && url.pathname.startsWith('/api/orders/')) {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     const id = url.pathname.replace('/api/orders/', '');
     if (orders.remove(id)) return ok({ success: true });
     return badReq('Commande introuvable');
@@ -297,7 +310,7 @@ function handleRequest(req, res) {
 
   // POST /api/restart
   if (req.method === 'POST' && url.pathname === '/api/restart') {
-    if (authKey !== API_KEY) return authErr();
+    if (!checkApiEnabled()) return;
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, message: 'Red\u00e9marrage...' }));
     setTimeout(() => gracefulShutdown('API_RESTART'), 500);

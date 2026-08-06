@@ -183,8 +183,8 @@ const FEATURE_DEFINITIONS = {
     color: '#FF9800',
     commands: ['boutique', 'acheter'],
     settings: {
-      mmNumber: { type: 'text', label: 'Num\u00e9ro Mobile Money', default: '032 81 381 58' },
-      ownerEmail: { type: 'text', label: 'Email pour notifications de paiement', default: 'mathieurambelomanana@gmail.com' },
+      mmNumber: { type: 'text', label: 'Num\u00e9ro Mobile Money', default: '' },
+      ownerEmail: { type: 'text', label: 'Email pour notifications de paiement', default: '' },
       mmOperator: { type: 'text', label: 'Op\u00e9rateur Mobile Money (Telma / Orange / Airtel)', default: 'Telma' },
     },
   },
